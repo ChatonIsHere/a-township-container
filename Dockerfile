@@ -16,14 +16,19 @@ RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         wget gnupg2 ca-certificates xvfb x11vnc novnc websockify \
-        cabextract unzip p7zip-full winetricks xdg-user-dirs dbus-x11 \
+        cabextract unzip p7zip-full winetricks xdg-user-dirs dbus-x11 rsync \
         libgl1-mesa-dri libglx-mesa0 mesa-utils \
         mesa-vulkan-drivers libvulkan1 vulkan-tools && \
     mkdir -pm755 /etc/apt/keyrings && \
     wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
     wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources && \
     apt-get update && \
-    apt-get install -y --install-recommends winehq-stable && \
+    # wine is pinned so rebuilds are reproducible; apt needs every wine package pinned to resolve a non-latest version
+    apt-get install -y --install-recommends \
+        winehq-stable=10.0.0.0~jammy-1 \
+        wine-stable=10.0.0.0~jammy-1 \
+        wine-stable-amd64=10.0.0.0~jammy-1 \
+        wine-stable-i386:i386=10.0.0.0~jammy-1 && \
     rm -rf /var/lib/apt/lists/*
 
 # no sound card in the container, so route ALSA to a null device instead of erroring/crashing on audio init
