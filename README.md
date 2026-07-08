@@ -1,4 +1,4 @@
-# atownshipcontainer
+# A Township Container
 
 A Township Tale server container using The Modding Tavern's server implementation
 
