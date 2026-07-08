@@ -18,7 +18,7 @@ If `startServer.bat`, `version.dll`, and `A Township Tale.exe` aren't sitting at
 
 The AppData/settings path within wine is mapped to the `ServerData` folder in the `server` volume, so it's persisted and accessible to you lovely people
 
--# If the client and server zip files ever end up in github releases for TavernLib, we might be able to automatically pull those. We'll still need the A Township Tale installation though
+If the client and server zip files ever end up in github releases for TavernLib, we might be able to automatically pull those. We'll still need the A Township Tale installation though
 
 ## Note
 
