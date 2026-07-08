@@ -10,12 +10,9 @@ services:
         security_opt:
             - seccomp:unconfined
         volumes:
-            # the game can't run directly off the Windows bind mount: wine's memory-mapping of
-            # large dlls (UnityPlayer.dll) returns zeroed pages there and crashes on startup,
-            # so the entrypoint syncs /game-src into the game-files volume and runs from /game
-            - ./server:/game-src:ro
-            - game-files:/game
-            - ./server/ServerData:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
+            - ./game-source:/game-source:ro
+            - game-files:/game-files
+            - ./server-data:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
             - wine-prefix:/root/.wine
         ports:
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp'
