@@ -1,0 +1,28 @@
+services:
+    att-server:
+        build: .
+        container_name: att-server
+        restart: unless-stopped
+        cpus: 4
+        mem_limit: 8g
+        cap_add:
+            - SYS_PTRACE
+        security_opt:
+            - seccomp:unconfined
+        volumes:
+            - ./server:/game
+            - ./server/ServerData:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
+            - wine-prefix:/root/.wine
+        ports:
+            - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp'
+            - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/tcp'
+            - '${SERVER_PORT_2:-1761}:${SERVER_PORT_2:-1761}/udp'
+            - '${SERVER_PORT_2:-1761}:${SERVER_PORT_2:-1761}/tcp'
+        environment:
+            SERVER_PORT: ${SERVER_PORT:-1757}
+            ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN}
+            ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN}
+            ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN}
+
+volumes:
+    wine-prefix:
