@@ -30,7 +30,7 @@ export DISPLAY=:1
 
 rm -f /tmp/.X1-lock /tmp/.X11-unix/X1
 
-# att seems to need a display even though it's headless so now we have a virtual framebuffer server
+# the game still needs a display to exist even with -batchmode -nographics, or wine dies as soon as it tries to create a window
 Xvfb "$DISPLAY" -screen 0 1024x768x24 &
 
 # Xvfb is slow so we gotta wait :)
@@ -38,8 +38,6 @@ for i in $(seq 1 20); do
     [ -e /tmp/.X11-unix/X1 ] && break
     sleep 0.5
 done
-
-cp /opt/dxvk/x64/*.dll "$WINEPREFIX/drive_c/windows/system32/"
 
 # i don't have a mouse in terminal
 wine reg add "HKEY_CURRENT_USER\Software\Wine\WineDbg" /v ShowCrashDialog /t REG_DWORD /d 0 /f
