@@ -1,15 +1,15 @@
 #!/bin/bash
 set -e
 
-# mirror the game into the container-side volume; ServerData is bind-mounted into the
-# wine prefix separately so it stays out of the sync entirely
+# mirror the game into the container-side volume
+# server-data is bind-mounted into the # wine prefix separately so it stays out of the sync entirely
 sync_game() {
-    if [ ! -f "/game-src/A Township Tale.exe" ]; then
+    if [ ! -f "/game-source/A Township Tale.exe" ]; then
         echo "A Township Tale.exe executable is missing, preventing sync"
         exit 1
     fi
     echo "Syncing game files, this might take a few minutes"
-    rsync -a --delete --exclude '/ServerData' /game-src/ /game/
+    rsync -a --delete /game-source/ /game-files/
     echo "Game files synced."
 }
 
@@ -20,11 +20,11 @@ if [ "$1" = "sync" ]; then
 fi
 
 # only sync automatically on first run, when the volume is still empty
-if [ ! -f "/game/A Township Tale.exe" ]; then
+if [ ! -f "/game-files/A Township Tale.exe" ]; then
     sync_game
 fi
 
-cd /game
+cd /game-files
 
 export DISPLAY=:1
 

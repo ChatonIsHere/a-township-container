@@ -46,7 +46,7 @@ RUN wget -O /tmp/dxvk.tar.gz "https://github.com/doitsujin/dxvk/releases/downloa
     rm -f /tmp/dxvk.tar.gz
 
 # the game files and client/server zips end up here
-WORKDIR /game
+WORKDIR /game-files
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
