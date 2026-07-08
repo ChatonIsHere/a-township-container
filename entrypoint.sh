@@ -1,6 +1,29 @@
 #!/bin/bash
 set -e
 
+# mirror the game into the container-side volume; ServerData is bind-mounted into the
+# wine prefix separately so it stays out of the sync entirely
+sync_game() {
+    if [ ! -f "/game-src/A Township Tale.exe" ]; then
+        echo "A Township Tale.exe executable is missing, preventing sync"
+        exit 1
+    fi
+    echo "Syncing game files, this might take a few minutes"
+    rsync -a --delete --exclude '/ServerData' /game-src/ /game/
+    echo "Game files synced."
+}
+
+# manual re-sync: docker compose run --rm a-township-container sync
+if [ "$1" = "sync" ]; then
+    sync_game
+    exit 0
+fi
+
+# only sync automatically on first run, when the volume is still empty
+if [ ! -f "/game/A Township Tale.exe" ]; then
+    sync_game
+fi
+
 cd /game
 
 export DISPLAY=:1

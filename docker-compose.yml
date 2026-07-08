@@ -1,7 +1,7 @@
 services:
-    att-server:
+    a-township-container:
         build: .
-        container_name: att-server
+        container_name: a-township-container
         restart: unless-stopped
         cpus: 4
         mem_limit: 8g
@@ -10,7 +10,11 @@ services:
         security_opt:
             - seccomp:unconfined
         volumes:
-            - ./server:/game
+            # the game can't run directly off the Windows bind mount: wine's memory-mapping of
+            # large dlls (UnityPlayer.dll) returns zeroed pages there and crashes on startup,
+            # so the entrypoint syncs /game-src into the game-files volume and runs from /game
+            - ./server:/game-src:ro
+            - game-files:/game
             - ./server/ServerData:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
             - wine-prefix:/root/.wine
         ports:
@@ -26,3 +30,4 @@ services:
 
 volumes:
     wine-prefix:
+    game-files:
