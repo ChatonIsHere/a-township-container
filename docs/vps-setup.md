@@ -353,7 +353,7 @@ Your world saves and settings live in `~/att-server/server-data` on the VPS, and
 
 Give it a minute or two after the logs settle, then try connecting to the game using your server's IP.
 
-(ADD LINK TO WEB TOOL HERE FOR QUICK IN-BROWSER SERIALISATION UNTIL TMT ADDS THE SERVER BROWSER)
+Players will need a Custom Server connection file pointing at your server's IP to actually join. Use the [encode/decode tool](https://chatonishere.github.io/a-township-container/) to generate one in your browser.
 
 ## Troubleshooting
 

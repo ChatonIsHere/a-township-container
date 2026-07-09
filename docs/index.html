@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Custom Servers Encoder/Decoder</title>
+        <style>
+            body {
+                max-width: 40rem;
+                margin: 2rem auto;
+                padding: 0 1rem;
+                font-family: sans-serif;
+                background: #1a1c20;
+                color: #e6e6e6;
+            }
+            fieldset {
+                border: 1px solid #3a3d44;
+                border-radius: 6px;
+                margin-bottom: 1.5rem;
+            }
+            label {
+                display: block;
+                margin-top: 0.5rem;
+            }
+            input,
+            button {
+                border-radius: 4px;
+            }
+            input {
+                width: 100%;
+                box-sizing: border-box;
+                background: #24262b;
+                color: inherit;
+                border: 1px solid #3a3d44;
+            }
+            button {
+                margin-top: 1rem;
+                padding: 0.5rem 1rem;
+                border: 0;
+                background: #3273dc;
+                color: #fff;
+                cursor: pointer;
+            }
+            .err {
+                color: #f14668;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Custom Servers Encoder/Decoder</h1>
+        <p>Serialize and deserialize Custom Servers connection files</p>
+
+        <fieldset>
+            <legend>Serialize to File</legend>
+            <label for="name">Name</label>
+            <input id="name" type="text" placeholder="My Server" />
+            <label for="description">Description</label>
+            <input id="description" type="text" placeholder="Friendly co-op lobby" />
+            <label for="address">Address (IP/Host)</label>
+            <input id="address" type="text" placeholder="127.0.0.1" />
+            <button id="downloadBtn">Download .ref File</button>
+            <p id="saveResult"></p>
+        </fieldset>
+
+        <fieldset>
+            <legend>Deserialize Existing File</legend>
+            <label for="fileInput">Choose file</label>
+            <input id="fileInput" type="file" />
+            <button id="decodeBtn">Decode File</button>
+            <p id="decodeResult"></p>
+        </fieldset>
+
+        <script>
+            const $ = (id) => document.getElementById(id);
+            const fields = ['name', 'description', 'address'].map($);
+            const encoder = new TextEncoder();
+            const decoder = new TextDecoder();
+
+            function writeString(value) {
+                const text = encoder.encode(value || '');
+                const bytes = [];
+                let v = text.length;
+                while (v >= 0x80) {
+                    bytes.push((v & 0x7f) | 0x80);
+                    v >>>= 7;
+                }
+                bytes.push(v);
+                return [...bytes, ...text];
+            }
+
+            function readString(bytes, state) {
+                let length = 0,
+                    shift = 0,
+                    b;
+                do {
+                    if (state.pos >= bytes.length || shift >= 35) throw new Error('Invalid 7-bit encoded int.');
+                    b = bytes[state.pos++];
+                    length |= (b & 0x7f) << shift;
+                    shift += 7;
+                } while (b & 0x80);
+                if (state.pos + length > bytes.length) throw new Error('Unexpected end of file while reading string.');
+                return decoder.decode(bytes.subarray(state.pos, (state.pos += length)));
+            }
+
+            $('downloadBtn').onclick = () => {
+                const bytes = new Uint8Array(fields.flatMap((f) => writeString(f.value)));
+                const fileName = `${fields[0].value.trim() || 'server'}.ref`;
+                const url = URL.createObjectURL(new Blob([bytes]));
+                const a = Object.assign(document.createElement('a'), { href: url, download: fileName });
+                a.click();
+                URL.revokeObjectURL(url);
+                $('saveResult').textContent = `Saved ${fileName} (${bytes.length} bytes).`;
+            };
+
+            $('decodeBtn').onclick = async () => {
+                const result = $('decodeResult');
+                const file = $('fileInput').files[0];
+                result.className = '';
+                if (!file) return ((result.className = 'err'), (result.textContent = 'Choose a file first.'));
+                try {
+                    const bytes = new Uint8Array(await file.arrayBuffer());
+                    const state = { pos: 0 };
+                    fields.forEach((f) => (f.value = readString(bytes, state)));
+                    result.textContent = 'Decoded successfully and loaded into the fields above.';
+                } catch (err) {
+                    result.className = 'err';
+                    result.textContent = `Decode failed: ${err.message}`;
+                }
+            };
+        </script>
+    </body>
+</html>

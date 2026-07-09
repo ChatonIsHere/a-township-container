@@ -6,6 +6,8 @@ A Township Tale server container using The Modding Tavern's server implementatio
 
 Setting this up on a rented VPS? There's a full beginner walkthrough in [docs/vps-setup.md](docs/vps-setup.md) covering renting the box, securing it, and getting the container running. The short version for people who already have a Docker host is below.
 
+There's a [browser-based encode/decode tool](https://chatonishere.github.io/a-township-container/) for encoding and decoding the Custom Servers connection files.
+
 Grab the published image instead of building it yourself. Create a folder with a `docker-compose.yml` like this:
 
 ```yaml
