@@ -104,7 +104,7 @@
 
             $('downloadBtn').onclick = () => {
                 const bytes = new Uint8Array(fields.flatMap((f) => writeString(f.value)));
-                const fileName = `${fields[0].value.trim() || 'server'}.ref`;
+                const fileName = `${fields[0].value.trim() || 'server'}`;
                 const url = URL.createObjectURL(new Blob([bytes]));
                 const a = Object.assign(document.createElement('a'), { href: url, download: fileName });
                 a.click();
