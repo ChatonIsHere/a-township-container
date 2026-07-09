@@ -19,7 +19,7 @@ RUN dpkg --add-architecture i386 && \
     wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources && \
     apt-get update && \
     # wine is pinned so rebuilds are reproducible; apt needs every wine package pinned to resolve a non-latest version
-    apt-get install -y --install-recommends \
+    apt-get install -y --no-install-recommends \
         winehq-stable=10.0.0.0~jammy-1 \
         wine-stable=10.0.0.0~jammy-1 \
         wine-stable-amd64=10.0.0.0~jammy-1 \
