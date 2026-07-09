@@ -180,7 +180,7 @@ sudo ufw allow 1761/udp comment 'ATT game 2'
 We want to make sure that's worked before we enable it, so run the below:
 
 ```bash
-sudo ufw status verbose
+sudo ufw show added
 ```
 
 You should see all five rules (each listed twice, once for IPv4 and once with `(v6)` next to it, which is normal) and `Default: deny (incoming), allow (outgoing)`. As long as you see a rule there for port 22, we're all good! We can now enable the firewall.
@@ -293,7 +293,7 @@ chmod 600 .env
 
 ## Uploading the game files
 
-Time to get your prepared `game-source` folder onto the VPS. Uploading ~4.4GB as thousands of individual files over SFTP is painfully slow, so zip it first on your PC. Select everything in the folder, right-click, and pick `Compress to ZIP file` (or use 7-Zip). This should give you a `game-source.zip` that contains all the files the server needs to run.
+Time to get your prepared `game-source` folder onto the VPS. Uploading ~4.4GB as thousands of individual files over SFTP is painfully slow, so zip it first on your PC. Select the folder, right-click, and pick `Compress to ZIP file` (or use 7-Zip). This should give you a `game-source.zip` that contains all the files the server needs to run.
 
 Now connect with WinSCP:
 
