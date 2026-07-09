@@ -3,8 +3,9 @@ services:
         build: .
         container_name: a-township-container
         restart: unless-stopped
-        cpus: 4
-        mem_limit: 8g
+        # Uncomment the following lines to limit CPU and memory usage
+        # cpus: 2
+        # mem_limit: 4g
         cap_add:
             - SYS_PTRACE
         security_opt:

@@ -4,6 +4,8 @@ A Township Tale server container using The Modding Tavern's server implementatio
 
 ## Running the server
 
+Setting this up on a rented VPS? There's a full beginner walkthrough in [docs/vps-setup.md](docs/vps-setup.md) covering renting the box, securing it, and getting the container running. The short version for people who already have a Docker host is below.
+
 Grab the published image instead of building it yourself. Create a folder with a `docker-compose.yml` like this:
 
 ```yaml
@@ -12,8 +14,8 @@ services:
         image: ghcr.io/chatonishere/a-township-container:latest
         container_name: a-township-container
         restart: unless-stopped
-        cpus: 4
-        mem_limit: 8g
+        cpus: 2
+        mem_limit: 4g
         cap_add:
             - SYS_PTRACE
         security_opt:
