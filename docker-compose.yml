@@ -11,8 +11,7 @@ services:
         security_opt:
             - seccomp:unconfined
         volumes:
-            - ./game-source:/game-source:ro
-            - game-files:/game-files
+            - ./game-source:/game-files
             - ./server-data:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
             - wine-prefix:/root/.wine
         ports:
@@ -28,4 +27,3 @@ services:
 
 volumes:
     wine-prefix:
-    game-files:

@@ -16,15 +16,14 @@ services:
         image: ghcr.io/chatonishere/a-township-container:latest
         container_name: a-township-container
         restart: unless-stopped
-        cpus: 2
-        mem_limit: 4g
+        # cpus: 2
+        # mem_limit: 4g
         cap_add:
             - SYS_PTRACE
         security_opt:
             - seccomp:unconfined
         volumes:
-            - ./game-source:/game-source:ro
-            - game-files:/game-files
+            - ./game-source:/game-files
             - ./server-data:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
             - wine-prefix:/root/.wine
         ports:
@@ -40,7 +39,6 @@ services:
 
 volumes:
     wine-prefix:
-    game-files:
 ```
 
 Next to it, add a `.env` file with the access, refresh, and identity tokens. You can get these from the server.bat
@@ -52,8 +50,6 @@ ATT_IDENTITY_TOKEN=
 ```
 
 Then set up the `game-source` folder (see below) and run `docker compose up -d`
-
-The first start can take a few minutes as we copy the game (~4.4 GB) from our nice and accessible `game-source` folder into the `game-files` Docker volume before launching, since mapped volumes on Windows seem to cause some issues for the chonky `UnityPlayer.dll` that the game files usually have. Further starts skip the copy entirely
 
 ## Setting up the game-source folder
 
@@ -69,20 +65,12 @@ If the client and server zip files ever end up in github releases for TavernLib,
 
 ## Updating game files or mods
 
-1. Drop the new files into `game-source`
-2. Re-sync and restart:
+Stop the server, drop the new files into `game-source`, and start it again:
 
 ```
 docker compose stop
-docker compose run --rm a-township-container sync
 docker compose up -d
 ```
-
-The sync is a mirror, so the `game-files` volume ends up an exact copy of `game-source`, deletions included. `server-data` lives in its own folder outside of `game-source`, so it's never touched by the sync and your saves and settings are perfectly safe
-
-### Saving disk space
-
-Since the game only runs from the `game-files` volume after the first sync, you can delete the game files out of `game-source` to avoid keeping two copies on disk. `server-data` is unaffected either way since it's a separate folder. The sync command refuses to run if `game-source` doesn't contain a game install, so an emptied folder can't wipe the volume. Put the game files back whenever you next want to update, or just leave them there if you've got the space
 
 ## Building your own image
 
