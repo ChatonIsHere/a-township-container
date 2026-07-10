@@ -35,7 +35,7 @@ An SSH key is a pair of files; one is a private key that stays on your PC, and a
 Any provider works, we just need something that provides an Ubuntu VPS. Hetzner, OVH, Netcup, DigitalOcean, Vultr, whoever. I personally use Hetzner, but that's mostly because it's what I'm used to.
 
 - At least 2 CPU cores and 4GB of RAM (testing is still ongoing on what this server actually needs, but this is a good starting point. I'm testing on a Hetzner CX33, but the CX23 should be enough)
-- 40GB of disk or more (the game is ~4.4GB and briefly exists 2-3 times on the server, on top of the Docker image, Ubuntu itself, and your saves. It's also nice to have a little wiggle room for backups and such)
+- 40GB of disk or more (the game is ~4.4GB, plus the zip briefly sitting around during upload, the Docker image, Ubuntu itself, and your saves. It's also nice to have a little wiggle room for backups and such)
 - A dedicated IPv4 address (this is standard, but some hosts now sell cheaper IPv6-only servers. Don't buy one of those, the game needs IPv4)
 - A location close to whoever's playing (distance is ping)
 
@@ -249,8 +249,7 @@ services:
         security_opt:
             - seccomp:unconfined
         volumes:
-            - ./game-source:/game-source:ro
-            - game-files:/game-files
+            - ./game-source:/game-files
             - ./server-data:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
             - wine-prefix:/root/.wine
         ports:
@@ -266,7 +265,6 @@ services:
 
 volumes:
     wine-prefix:
-    game-files:
 ```
 
 If you want or need to limit the server's container with maximum CPU and RAM limits, uncomment the `cpus: 2` and `mem_limit: 4g` lines and adjust them to what you want.
@@ -337,7 +335,7 @@ docker compose up -d
 docker compose logs -f
 ```
 
-The first start is slow, and that's normal: Docker pulls the image, then the container copies the entire game from `game-source` into its internal volume ("Syncing game files, this might take a few minutes"), then Wine builds its prefix, and only then does the game boot. Watch the logs roll by. Every start after this one skips all of that and is much faster. Press `Ctrl+C` to stop watching the logs once you're happy it's started. This does not stop the server, it keeps running in the background because of the `-d` we added when starting it.
+The first start is slow, and that's normal: Docker pulls the image, Wine builds its prefix, and then the game boots. Starts after the first one skip the prefix setup, so should be a little faster. Press `Ctrl+C` to stop watching the logs once you're happy it's started. This does not stop the server, it keeps running in the background because of the `-d` we added when starting it.
 
 Your day-to-day toolkit from here is as follows:
 
@@ -349,7 +347,7 @@ docker compose down        # stop the server
 docker compose up -d       # start it again
 ```
 
-Your world saves and settings live in `~/att-server/server-data` on the VPS, and that's the folder to back up. Updating the game files or mods later works exactly as described in [the README](../README.md#updating-game-files-or-mods): drop the new files into `game-source` (via WinSCP), then stop the server, `docker compose run --rm a-township-container sync`, and start again. And per the README's disk-space note, once the first sync has completed you can delete the game files out of `game-source` to keep only one copy on disk.
+Your world saves and settings live in `~/att-server/server-data` on the VPS, and that's the folder to back up. Updating the game files or mods later works exactly as described in [the README](../README.md#updating-game-files-or-mods): stop the server, drop the new files into `game-source` (via WinSCP), and start again.
 
 Give it a minute or two after the logs settle, then try connecting to the game using your server's IP.
 
@@ -381,7 +379,7 @@ That's Ubuntu's `needrestart` tool being chatty. Press Enter to accept the defau
 **`docker: permission denied while trying to connect to the Docker daemon socket`.**
 Your session is older than the group change from the Docker section. Log out of PuTTY and back in. If it persists, run `groups` and check that `docker` is in the list.
 
-**The container exits with "A Township Tale.exe executable is missing, preventing sync".**
+**The container exits with "A Township Tale.exe is missing from /game-files".**
 The container can't find the game at the root of `game-source`, which is almost always the nested-folder problem from the upload section. `ls ~/att-server/game-source` needs to show the exe directly, not another folder.
 
 **The container starts but keeps restarting, or the logs show authentication errors.**
@@ -414,7 +412,4 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 You can confirm OOM kills with `sudo dmesg | grep -i "out of memory"`.
 
 **Disk full (`no space left on device`).**
-`df -h` shows what's using what. Quick wins: delete `game-source.zip` if it's still hanging around, clear the game files out of `game-source` after the first sync (see the README's disk-space section, saves you ~4.4GB), and `docker image prune -f` to drop superseded image versions after updates.
-
-**The first start has been "Syncing game files" for ages.**
-A few minutes is normal, it's copying ~4.4GB. The slowest VPS disks take a while longer. It only ever happens on the first start (or a manual `sync`).
+`df -h` shows what's using what. You can delete `game-source.zip` if it's still there, and `docker image prune -f` to drop old image versions after updates.
