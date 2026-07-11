@@ -38,6 +38,6 @@ exec wine "A Township Tale.exe" \
     /debug_helper \
     /force_offline \
     --melonloader.hideconsole \
-    /access_token "${ATT_ACCESS_TOKEN}" \
-    /refresh_token "${ATT_REFRESH_TOKEN}" \
-    /identity_token "${ATT_IDENTITY_TOKEN}"
+    /access_token "${ATT_ACCESS_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwiVXNlcm5hbWUiOiJTZXJ2ZXIiLCJyb2xlIjoiQWNjZXNzIiwiaXNfdmVyaWZpZWQiOiJ0cnVlIiwiUG9saWN5IjpbImdhbWVfYWNjZXNzX3B1YmxpYyIsInNlcnZlcl9hY2Nlc3NfcHJlX2FscGhhIiwic2VydmVyX2FjY2Vzc190dXRvcmlhbCJdLCJyb2xlcyI6WyJwcmVfYWxwaGFfcGxheWVyIiwicHVibGljX3BsYXllciJdLCJleHAiOjI3ODI5Mjc3MTMsImlzcyI6IkFsdGFXZWJBUEkiLCJhdWQiOiJBbHRhQ2xpZW50In0.XZWt_WnrSG2ITJisUDV_im76MpjQ2xU5Prm0gMBZKjQ}" \
+    /refresh_token "${ATT_REFRESH_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwicm9sZSI6IlJlZnJlc2giLCJleHAiOjI3OTE1NjQxMTMsImlzcyI6IkFsdGFXZWJBUEkiLCJhdWQiOiJBbHRhQ2xpZW50In0.Anle9q8ooVM080W30QY2mt2nAefPlDhkDaz-3VTfIug}" \
+    /identity_token "${ATT_IDENTITY_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwiVXNlcm5hbWUiOiJTZXJ2ZXIiLCJyb2xlIjoiSWRlbnRpdHkiLCJleHAiOjI3OTE1NjQxMTMsImlzcyI6IkFsdGFXZWJBUEkiLCJhdWQiOiJBbHRhQ2xpZW50In0.1FleaoMleKDMb-fGP64C_825gVIIRdkPuWdy11E3xTk}"
