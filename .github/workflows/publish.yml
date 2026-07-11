@@ -3,7 +3,7 @@ name: Publish Docker image
 on:
     push:
         branches: [main]
-        tags: ['v*']
+        tags: ['*.*.*-*']
     workflow_dispatch:
 
 env:
@@ -33,7 +33,7 @@ jobs:
                   images: ${{ env.IMAGE_NAME }}
                   tags: |
                       type=raw,value=latest,enable={{is_default_branch}}
-                      type=semver,pattern={{version}}
+                      type=ref,event=tag
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3

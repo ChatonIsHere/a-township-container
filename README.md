@@ -27,27 +27,26 @@ services:
             - ./server-data:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
             - wine-prefix:/root/.wine
         ports:
+            # gameserver
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp'
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/tcp'
-            - '${SERVER_PORT_2:-1761}:${SERVER_PORT_2:-1761}/udp'
-            - '${SERVER_PORT_2:-1761}:${SERVER_PORT_2:-1761}/tcp'
+            # forest
+            - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/udp'
+            - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/tcp'
+            # authentication
+            - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/udp'
+            - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp'
         environment:
             SERVER_PORT: ${SERVER_PORT:-1757}
-            ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN}
-            ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN}
-            ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN}
+            ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
+            ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
+            ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}
 
 volumes:
     wine-prefix:
 ```
 
-Next to it, add a `.env` file with the access, refresh, and identity tokens. You can get these from the server.bat
-
-```
-ATT_ACCESS_TOKEN=
-ATT_REFRESH_TOKEN=
-ATT_IDENTITY_TOKEN=
-```
+No `.env` file is required to get running. If you want to override the port or use your own tokens, add a `.env` file next to the compose file and check [.env.example](.env.example).
 
 Then set up the `game-source` folder (see below) and run `docker compose up -d`
 
@@ -74,7 +73,7 @@ docker compose up -d
 
 ## Building your own image
 
-Clone this repo and run `docker compose up -d --build` instead of pulling the published image. Pushing to `main` (or a `v*` tag, which I swear I will eventually use) rebuilds and republishes the image automatically via GitHub Actions
+Clone this repo and run `docker compose up -d --build` instead of pulling the published image. Pushing to `main` rebuilds and republishes the `latest` tag automatically via GitHub Actions. Pushing a version tag (format `YY.MM.PATCH-TAVERNLAUNCHERVERSION`, e.g. `26.7.1-1.0.0`) publishes that as its own tag instead
 
 ## Note
 

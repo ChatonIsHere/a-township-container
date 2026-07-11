@@ -16,7 +16,6 @@ A VPS is just a computer in someone else's datacentre that you rent. You general
 You'll also need to make sure you've got the following on-hand:
 
 - Your prepared `game-source` folder, meaning a clean A Township Tale install with the client and server packages extracted into it, exactly as described in [the README](../README.md#setting-up-the-game-source-folder). Check that `A Township Tale.exe`, `startServer.bat`, and `version.dll` are sitting directly inside `game-source` before going any further
-- The three tokens (access, refresh, identity). Open the `server.bat` from the server package in a text editor and copy them out somewhere safe
 - ~$5-10 a month for the VPS itself
 
 ## Generating an SSH key
@@ -159,7 +158,7 @@ From here on, everything is done as the `att` user, with `sudo` in front of admi
 
 ## Setting up the software firewall
 
-UFW (uncomplicated firewall) blocks every incoming connection except the ones you explicitly allow. For this server that's exactly three things: SSH, and the game's two ports.
+UFW (uncomplicated firewall) blocks every incoming connection except the ones you explicitly allow, which for this server is just your SSH access. The game's ports don't need a UFW rule at all, since Docker publishes them by writing its own rules directly into iptables, bypassing UFW entirely.
 
 It's usually preinstalled on Ubuntu, but just in case:
 
@@ -167,23 +166,13 @@ It's usually preinstalled on Ubuntu, but just in case:
 sudo apt install -y ufw
 ```
 
-Now it's time to add the rules.
+Now add the one rule we need:
 
 ```bash
 sudo ufw allow 22/tcp comment 'SSH'
-sudo ufw allow 1757/tcp comment 'ATT game'
-sudo ufw allow 1757/udp comment 'ATT game'
-sudo ufw allow 1761/tcp comment 'ATT game 2'
-sudo ufw allow 1761/udp comment 'ATT game 2'
 ```
 
-We want to make sure that's worked before we enable it, so run the below:
-
-```bash
-sudo ufw show added
-```
-
-You should see all five rules (each listed twice, once for IPv4 and once with `(v6)` next to it, which is normal) and `Default: deny (incoming), allow (outgoing)`. As long as you see a rule there for port 22, we're all good! We can now enable the firewall.
+`sudo ufw show added` will echo back the rule as a preview, but it's just showing you what's queued up, not what's actually active. Once you're happy, enable the firewall:
 
 ```bash
 sudo ufw enable
@@ -191,7 +180,15 @@ sudo ufw enable
 
 It warns that enabling may disrupt existing SSH connections. You allowed 22 first, so answer `y`.
 
-It's worth noting that many providers have their own firewall in the control panel. Most aren't enabled by default, but if yours is, the game ports might need opening there too. See [Troubleshooting](#troubleshooting) for more information.
+Now check that it's actually running and doing what you expect:
+
+```bash
+sudo ufw status verbose
+```
+
+You should see `Status: active`, the SSH rule listed (once for IPv4 and once with `(v6)` next to it, which is normal), and `Default: deny (incoming), allow (outgoing)`.
+
+It's worth noting that many providers have their own firewall in the control panel. Most aren't enabled by default, but if yours is, the game ports will need opening there too, since it sits in front of the VPS entirely and UFW never sees that traffic.
 
 ## Installing Docker
 
@@ -253,41 +250,26 @@ services:
             - ./server-data:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
             - wine-prefix:/root/.wine
         ports:
+            # gameserver
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp'
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/tcp'
-            - '${SERVER_PORT_2:-1761}:${SERVER_PORT_2:-1761}/udp'
-            - '${SERVER_PORT_2:-1761}:${SERVER_PORT_2:-1761}/tcp'
+            # forest
+            - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/udp'
+            - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/tcp'
+            # authentication
+            - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/udp'
+            - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp'
         environment:
             SERVER_PORT: ${SERVER_PORT:-1757}
-            ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN}
-            ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN}
-            ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN}
+            ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
+            ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
+            ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}
 
 volumes:
     wine-prefix:
 ```
 
-If you want or need to limit the server's container with maximum CPU and RAM limits, uncomment the `cpus: 2` and `mem_limit: 4g` lines and adjust them to what you want.
-
-Save and exit, then create the `.env` file that holds your tokens:
-
-```bash
-nano .env
-```
-
-```
-ATT_ACCESS_TOKEN=paste-your-access-token-here
-ATT_REFRESH_TOKEN=paste-your-refresh-token-here
-ATT_IDENTITY_TOKEN=paste-your-identity-token-here
-```
-
-No quotes, no spaces around the `=`. Make this file here on the server with nano rather than uploading it from Windows. Windows text files have invisible line-ending characters that can sometimes corrupt the tokens.
-
-Since the tokens are technically secrets, make the file readable only by you. Right now we're all using the same ones, but that might change!
-
-```bash
-chmod 600 .env
-```
+If you want or need to limit the server's container with maximum CPU and RAM limits, uncomment the `cpus: 2` and `mem_limit: 4g` lines and adjust them to what you want. You can then save and exit.
 
 ## Uploading the game files
 
@@ -383,20 +365,17 @@ Your session is older than the group change from the Docker section. Log out of 
 The container can't find the game at the root of `game-source`, which is almost always the nested-folder problem from the upload section. `ls ~/att-server/game-source` needs to show the exe directly, not another folder.
 
 **The container starts but keeps restarting, or the logs show authentication errors.**
-Run `docker compose logs` and read the tail. The usual suspects are the tokens: a copy-paste that grabbed a trailing space or quote, values wrapped in quotes in `.env`, or expired tokens (grab fresh ones from `server.bat` and `docker compose up -d` again).
-
-**My `.env` looks right but the tokens still don't work, and I made the file on Windows.**
-Windows ends its lines with an invisible extra character (`\r`) that becomes part of the token when Linux reads the file. Recreate the file on the server with nano, or run `sed -i 's/\r$//' .env` to strip them, then `docker compose up -d` again.
+Run `docker compose logs` and read the tail. This only comes up if you've overridden the bundled tokens with your own in `.env` - the usual suspects are a copy-paste that grabbed a trailing space or quote, values wrapped in quotes, an expired token, or (if the file was made on Windows) an invisible `\r` line ending. Recreate the file on the server with nano rather than uploading it from Windows, or run `sed -i 's/\r$//' .env` to strip stray line endings, then `docker compose up -d` again.
 
 **The server runs but nobody can connect from the game.**
 Work through these in order:
 
-1. **Host-level firewall.** This is the big one. Hetzner Cloud Firewalls, AWS security groups, Oracle Cloud (which blocks nearly everything by default), Azure NSGs... these sit in front of your VPS and UFW never even sees the traffic they drop. Open `1757` and `1761`, both TCP and UDP, in your host's control panel firewall too, or confirm no such firewall is attached to your server
+1. **Host-level firewall.** This is the big one. Hetzner Cloud Firewalls, AWS security groups, Oracle Cloud (which blocks nearly everything by default), Azure NSGs... these sit in front of your VPS and neither UFW nor Docker ever see the traffic they drop. Open `1757`, `1761`, and `1762`, both TCP and UDP, in your host's control panel firewall too, or confirm no such firewall is attached to your server
 2. **Is it actually listening?** `docker compose ps` should show the container as `Up` (not `Restarting`), and `sudo ss -ulpn | grep 1757` should show a listener
-3. **Port mismatch.** If you set `SERVER_PORT` in `.env`, your UFW rules and host firewall need to match it
+3. **Port mismatch.** If you set `SERVER_PORT`, `FOREST_PORT`, or `AUTH_PORT` in `.env`, your host firewall needs to match them
 
-**`ufw status` doesn't mention my game ports but they're reachable anyway.**
-Not a bug: Docker publishes container ports by writing its own firewall rules directly, bypassing UFW. The UFW rules still matter for everything non-Docker (like SSH), just be aware that UFW can't block a port Docker publishes. Don't publish container ports you don't want public (this compose file only publishes the game ports, so you're fine).
+**`ufw status` doesn't mention my game ports.**
+Not a bug, and no rule needs adding. Docker publishes container ports by writing its own rules directly into iptables, bypassing UFW entirely. UFW only ever sees and controls SSH here. Don't publish container ports you don't want public (this compose file only publishes the game ports, so you're fine).
 
 **The server randomly dies after running for a while, logs just stop.**
 On a 4GB box this is usually Linux's out-of-memory killer. Fresh cloud images have no swap, so try adding 2GB as a cushion:
