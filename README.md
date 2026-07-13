@@ -42,7 +42,7 @@ volumes:
     wine-prefix:
 ```
 
-Then create a folder called `game-source` in the same folder as your `docker-compose.yml` and upload your patched server files to it. If `version.dll` and `A Township Tale.exe` aren't sitting at the root of `game-source`, something went wrong.
+Then create a folder called `game-source` in the same folder as your `docker-compose.yml` and upload your patched server files to it. `version.dll`, `A Township Tale.exe`, and the `MelonLoader` and `Plugins` folders should all be sitting directly at the root of `game-source`. If any of them aren't, something went wrong. See [docs/patching-installation.md](docs/patching-installation.md) for more detailed information.
 
 You can then run `docker compose up -d` to start the server.
 

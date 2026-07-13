@@ -15,7 +15,7 @@ A VPS is just a computer in someone else's datacentre that you rent. You general
 
 You'll also need to make sure you've got the following on-hand:
 
-- Your prepared `game-source` folder, meaning a clean A Township Tale install with the client and server packages extracted into it, exactly as described in [the README](../README.md#setting-up-the-game-source-folder). Check that `A Township Tale.exe` and `version.dll` are sitting directly inside `game-source` before going any further
+- Your prepared `game-source` folder, meaning a patched server install with `A Township Tale.exe`, `version.dll`, and the `MelonLoader` and `Plugins` folders sitting directly inside it, exactly as described in [docs/patching-installation.md](patching-installation.md#preparing-the-game-source-zip). Check all four are directly inside `game-source` before going any further
 - ~$5-10 a month for the VPS itself
 
 ## Generating an SSH key
@@ -295,7 +295,7 @@ unzip game-source.zip
 ls
 ```
 
-That `ls` needs to show `A Township Tale.exe` and `version.dll` directly. If it shows a single folder instead (like `game-source/game-source/...`), you zipped the `game-source` folder itself instead of just its contents. Fix it with:
+That `ls` needs to show `A Township Tale.exe`, `version.dll`, `MelonLoader`, and `Plugins` directly. If it shows a single folder instead (like `game-source/game-source/...`), you zipped the `game-source` folder itself instead of just its contents. Fix it with:
 
 ```bash
 mv game-source/* game-source/.[!.]* . 2>/dev/null; rmdir game-source
@@ -360,7 +360,7 @@ That's Ubuntu's `needrestart` tool being chatty. Press Enter to accept the defau
 Your session is older than the group change from the Docker section. Log out of PuTTY and back in. If it persists, run `groups` and check that `docker` is in the list.
 
 **The container exits with "A Township Tale.exe is missing from /game-files".**
-The container can't find the game at the root of `game-source`, which is almost always the nested-folder problem from the upload section. `ls ~/att-server/game-source` needs to show the exe directly, not another folder.
+The container can't find the game at the root of `game-source`, which is almost always the nested-folder problem from the upload section. `ls ~/att-server/game-source` needs to show `A Township Tale.exe`, `version.dll`, `MelonLoader`, and `Plugins` directly, not another folder.
 
 **The server runs but nobody can connect from the game.**
 Work through these in order:
