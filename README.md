@@ -1,14 +1,10 @@
 # A Township Container
 
-A Township Tale server container using The Modding Tavern's server implementation
+A Township Tale server container using The Modding Tavern's server implementation.
 
 ## Running the server
 
-Setting this up on a rented VPS? There's a full beginner walkthrough in [docs/vps-setup.md](docs/vps-setup.md) covering renting the box, securing it, and getting the container running. The short version for people who already have a Docker host is below.
-
-There's a [browser-based encode/decode tool](https://chatonishere.github.io/a-township-container/) for encoding and decoding the Custom Servers connection files.
-
-Grab the published image instead of building it yourself. Create a folder with a `docker-compose.yml` like this:
+You can grab the published image instead of building it yourself. Create a folder with a `docker-compose.yml` like this:
 
 ```yaml
 services:
@@ -46,37 +42,20 @@ volumes:
     wine-prefix:
 ```
 
-No `.env` file is required to get running. If you want to override the port or use your own tokens, add a `.env` file next to the compose file and check [.env.example](.env.example).
+Then create a folder called `game-source` in the same folder as your `docker-compose.yml` and upload your patched server files to it. If `version.dll` and `A Township Tale.exe` aren't sitting at the root of `game-source`, something went wrong.
 
-Then set up the `game-source` folder (see below) and run `docker compose up -d`
+You can then run `docker compose up -d` to start the server.
 
-## Setting up the game-source folder
+The AppData/settings path within wine is mapped to its own `server-data` folder, so it's persisted and accessible to you lovely people. This is where your saves and server configuration will live.
 
-1. Copy a clean A Township Tale installation into `game-source`
-2. Extract the client package into the same folder
-3. Extract the server package into the same folder
-
-If `startServer.bat`, `version.dll`, and `A Township Tale.exe` aren't sitting at the root of `game-source`, something went wrong
-
-The AppData/settings path within wine is mapped to its own `server-data` folder, so it's persisted and accessible to you lovely people
-
-If the client and server zip files ever end up in github releases for TavernLib, we should be able to automatically pull those and only require the manual upload of the base game files
-
-## Updating game files or mods
-
-Stop the server, drop the new files into `game-source`, and start it again:
-
-```
-docker compose stop
-docker compose up -d
-```
+Setting this up on a rented VPS? There's a full beginner walkthrough in [docs/vps-setup.md](docs/vps-setup.md) covering renting the box, securing it, and getting the container running.
 
 ## Building your own image
 
-Clone this repo and run `docker compose up -d --build` instead of pulling the published image. Pushing to `main` rebuilds and republishes the `latest` tag automatically via GitHub Actions. Pushing a version tag (format `YY.MM.PATCH-TAVERNLAUNCHERVERSION`, e.g. `26.7.1-1.0.0`) publishes that as its own tag instead
+Clone this repo and run `docker compose up -d --build` instead of pulling the published image. Pushing to `main` rebuilds and republishes the `latest` tag automatically via GitHub Actions. Pushing a version tag (format `YY.MM.PATCH-TAVERNLAUNCHERVERSION`, e.g. `26.7.1-1.0.0`) publishes that as its own tag instead.
 
 ## Note
 
-I'm not affiliated with ALTA in any way, this is just an experimental repo to get The Modding Tavern's server stuff working in a docker container
+I'm not affiliated with ALTA in any way, this is just an experimental repo to get The Modding Tavern's server stuff working in a docker container.
 
 Thanks to the team at The Modding Tavern for their work, hopefully we'll get to keep our game!
