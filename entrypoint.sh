@@ -9,6 +9,22 @@ fi
 
 cd /game-files
 
+if [ ! -f server-config.yml ]; then
+    listing_token=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 48)
+    cat > server-config.yml <<EOF
+name: 'TMT ATT Docker Image'
+description: 'A server who forgot to change the default config'
+ports:
+  game: 1757
+  forest: 1761
+  rcon: 1758
+max-players: 20
+pc-world: true
+rcon-password: ''
+listing-token: '$listing_token'
+EOF
+fi
+
 export DISPLAY=:1
 
 rm -f /tmp/.X1-lock /tmp/.X11-unix/X1
