@@ -57,6 +57,8 @@ The container expects a folder called `game-source` with `A Township Tale.exe`, 
 
 If you see a nested folder instead, you selected and zipped the folder itself rather than its contents. Delete the zip and repeat step 3, making sure you select the files inside the folder before zipping, not the folder icon.
 
+The image writes a default `server-config.yml` into `game-source` on its first start if it doesn't find one already there. See [the README](../README.md#running-the-server) for what's actually configurable in it right now.
+
 ## Troubleshooting
 
 **TavernLauncher doesn't detect my Game Executable, or picks the wrong one.**

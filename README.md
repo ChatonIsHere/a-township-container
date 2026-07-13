@@ -46,6 +46,8 @@ Then create a folder called `game-source` in the same folder as your `docker-com
 
 You can then run `docker compose up -d` to start the server.
 
+On first start, the container will write a default `server-config.yml` into `game-source` if one isn't already there, so you can edit it in place and restart to apply changes. Right now, only `name` and `ports` actually do anything; the rest of the fields exist for future use but aren't read yet. `listing-token` is randomly generated at write time, this generation is not cryptographically done so you're free to do your own..
+
 The AppData/settings path within wine is mapped to its own `server-data` folder, so it's persisted and accessible to you lovely people. This is where your saves and server configuration will live.
 
 Setting this up on a rented VPS? There's a full beginner walkthrough in [docs/vps-setup.md](docs/vps-setup.md) covering renting the box, securing it, and getting the container running.
