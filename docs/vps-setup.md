@@ -15,7 +15,7 @@ A VPS is just a computer in someone else's datacentre that you rent. You general
 
 You'll also need to make sure you've got the following on-hand:
 
-- Your prepared `game-source` folder, meaning a clean A Township Tale install with the client and server packages extracted into it, exactly as described in [the README](../README.md#setting-up-the-game-source-folder). Check that `A Township Tale.exe`, `startServer.bat`, and `version.dll` are sitting directly inside `game-source` before going any further
+- Your prepared `game-source` folder, meaning a clean A Township Tale install with the client and server packages extracted into it, exactly as described in [the README](../README.md#setting-up-the-game-source-folder). Check that `A Township Tale.exe` and `version.dll` are sitting directly inside `game-source` before going any further
 - ~$5-10 a month for the VPS itself
 
 ## Generating an SSH key
@@ -273,7 +273,7 @@ If you want or need to limit the server's container with maximum CPU and RAM lim
 
 ## Uploading the game files
 
-Time to get your prepared `game-source` folder onto the VPS. Uploading ~4.4GB as thousands of individual files over SFTP is painfully slow, so zip it first on your PC. Select the folder, right-click, and pick `Compress to ZIP file` (or use 7-Zip). This should give you a `game-source.zip` that contains all the files the server needs to run.
+Time to get your prepared `game-source` folder onto the VPS. Uploading ~4.4GB as thousands of individual files over SFTP is painfully slow, so zip it first on your PC. Open the `game-source` folder, select everything inside it (`Ctrl+A`), right-click, and pick `Compress to ZIP file` (or use 7-Zip). |ip the contents, not the folder itself, so the files end up directly at the root of the zip. This should give you a `game-source.zip` sitting next to the folder, containing all the files the server needs to run.
 
 Now connect with WinSCP:
 
@@ -283,22 +283,22 @@ Now connect with WinSCP:
     3. Tick your saved session and click `OK`, which brings the IP and your `.ppk` key across automatically
     - Or fill it in manually: protocol `SFTP`, your server's IP, port `22`, user `att`, and your key under `Private key file` (click `Advanced`, then `SSH`, then `Authentication` to find it)
 2. Log in as `att`, not root (root can't log in anymore, that was the point). Enter your passphrase when asked if you added one
-3. The right-hand pane is the server, starting in `/home/att`. Double-click into `att-server`
-4. Drag `game-source.zip` from the left (your PC) into `att-server` and let it upload. This is the long part, go drink some water
+3. The right-hand pane is the server, starting in `/home/att`. Double-click into `att-server`, then create a new folder named `game-source` (right-click the empty space → `New` → `Directory`, or press `F7`) and double-click into it
+4. Drag `game-source.zip` from the left (your PC) into this `game-source` folder and let it upload. This is the long part, go drink some water
 
 Once its done uploading, switch back to PuTTY and run the below:
 
 ```bash
 sudo apt install -y unzip
-cd ~/att-server
-unzip game-source.zip -d game-source
-ls game-source
+cd ~/att-server/game-source
+unzip game-source.zip
+ls
 ```
 
-That `ls` needs to show `A Township Tale.exe`, `startServer.bat`, and `version.dll` directly. If it shows a single folder instead (like `game-source/game-source/...`), the zip had an extra folder level baked in. Fix it with:
+That `ls` needs to show `A Township Tale.exe` and `version.dll` directly. If it shows a single folder instead (like `game-source/game-source/...`), you zipped the `game-source` folder itself instead of just its contents. Fix it with:
 
 ```bash
-mv game-source/game-source/* game-source/game-source/.[!.]* game-source/ 2>/dev/null; rmdir game-source/game-source
+mv game-source/* game-source/.[!.]* . 2>/dev/null; rmdir game-source
 ```
 
 Once it looks right, delete the zip to get your ~4.4GB back:
@@ -333,8 +333,6 @@ Your world saves and settings live in `~/att-server/server-data` on the VPS, and
 
 Give it a minute or two after the logs settle, then try connecting to the game using your server's IP.
 
-Players will need a Custom Server connection file pointing at your server's IP to actually join. Use the [encode/decode tool](https://chatonishere.github.io/a-township-container/) to generate one in your browser.
-
 ## Troubleshooting
 
 Things get a little technical from here on out, so I don't blame you if you start pinging people for help.
@@ -363,9 +361,6 @@ Your session is older than the group change from the Docker section. Log out of 
 
 **The container exits with "A Township Tale.exe is missing from /game-files".**
 The container can't find the game at the root of `game-source`, which is almost always the nested-folder problem from the upload section. `ls ~/att-server/game-source` needs to show the exe directly, not another folder.
-
-**The container starts but keeps restarting, or the logs show authentication errors.**
-Run `docker compose logs` and read the tail. This only comes up if you've overridden the bundled tokens with your own in `.env` - the usual suspects are a copy-paste that grabbed a trailing space or quote, values wrapped in quotes, an expired token, or (if the file was made on Windows) an invisible `\r` line ending. Recreate the file on the server with nano rather than uploading it from Windows, or run `sed -i 's/\r$//' .env` to strip stray line endings, then `docker compose up -d` again.
 
 **The server runs but nobody can connect from the game.**
 Work through these in order:
