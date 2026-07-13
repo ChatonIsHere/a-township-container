@@ -69,3 +69,6 @@ Check your internet connection, then click `Reinstall`. TavernLauncher downloads
 
 **`A Township Tale.exe`, `version.dll`, `MelonLoader`, or `Plugins` isn't at the root of my `game-source` zip.**
 You likely zipped the server folder itself instead of the files inside it, or zipped one of the folders within it. See the note at the end of [Preparing the game-source zip](#preparing-the-game-source-zip).
+
+**Files sometimes fail to download / Authentication error when attempting to join the server.**
+TavernLauncher's downloads can be flaky from time to time. If something's not working and you can't pin down why, close both patchers, re-run `TavernLauncher - Client` and `TavernLauncher - Server` as Administrator, and redo the `Patch` and mod install/reinstall steps for both. Running as Admin clears up a surprising number of otherwise-unexplained issues.
