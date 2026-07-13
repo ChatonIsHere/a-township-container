@@ -18,6 +18,9 @@ services:
             # gameserver
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp'
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/tcp'
+            # rcon
+            - '${RCON_PORT:-1758}:${RCON_PORT:-1758}/udp'
+            - '${RCON_PORT:-1758}:${RCON_PORT:-1758}/tcp'
             # forest
             - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/udp'
             - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/tcp'
