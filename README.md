@@ -1,6 +1,10 @@
 # A Township Container
 
+[![Build Status](https://github.com/ChatonIsHere/a-township-container/actions/workflows/publish.yml/badge.svg)](https://github.com/ChatonIsHere/a-township-container/actions/workflows/publish.yml)
+
 A Township Tale server container using The Modding Tavern's server implementation.
+
+> **Note:** Authentication for the headless server workflow hasn't been implemented yet. Until it is, servers run through this container won't show up in the in-game community server list, they're reachable by IP only.
 
 ## Running the server
 
