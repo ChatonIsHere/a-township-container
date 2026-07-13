@@ -253,6 +253,9 @@ services:
             # gameserver
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp'
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/tcp'
+            # rcon
+            - '${RCON_PORT:-1758}:${RCON_PORT:-1758}/udp'
+            - '${RCON_PORT:-1758}:${RCON_PORT:-1758}/tcp'
             # forest
             - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/udp'
             - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/tcp'
@@ -365,9 +368,9 @@ The container can't find the game at the root of `game-source`, which is almost 
 **The server runs but nobody can connect from the game.**
 Work through these in order:
 
-1. **Host-level firewall.** This is the big one. Hetzner Cloud Firewalls, AWS security groups, Oracle Cloud (which blocks nearly everything by default), Azure NSGs... these sit in front of your VPS and neither UFW nor Docker ever see the traffic they drop. Open `1757`, `1761`, and `1762`, both TCP and UDP, in your host's control panel firewall too, or confirm no such firewall is attached to your server
+1. **Host-level firewall.** This is the big one. Hetzner Cloud Firewalls, AWS security groups, Oracle Cloud (which blocks nearly everything by default), Azure NSGs... these sit in front of your VPS and neither UFW nor Docker ever see the traffic they drop. Open `1757`, `1758`, `1761`, and `1762`, both TCP and UDP, in your host's control panel firewall too, or confirm no such firewall is attached to your server
 2. **Is it actually listening?** `docker compose ps` should show the container as `Up` (not `Restarting`), and `sudo ss -ulpn | grep 1757` should show a listener
-3. **Port mismatch.** If you set `SERVER_PORT`, `FOREST_PORT`, or `AUTH_PORT` in `.env`, your host firewall needs to match them
+3. **Port mismatch.** If you set `SERVER_PORT`, `RCON_PORT`, `FOREST_PORT`, or `AUTH_PORT` in `.env`, your host firewall needs to match them
 
 **`ufw status` doesn't mention my game ports.**
 Not a bug, and no rule needs adding. Docker publishes container ports by writing its own rules directly into iptables, bypassing UFW entirely. UFW only ever sees and controls SSH here. Don't publish container ports you don't want public (this compose file only publishes the game ports, so you're fine).
