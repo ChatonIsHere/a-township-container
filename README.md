@@ -4,8 +4,6 @@
 
 A Township Tale server container using The Modding Tavern's server implementation.
 
-> **Note:** Authentication for the headless server workflow hasn't been implemented yet. Until it is, servers run through this container won't show up in the in-game community server list, they're reachable by IP only.
-
 ## Running the server
 
 You can grab the published image instead of building it yourself. Create a folder with a `docker-compose.yml` like this:
@@ -25,6 +23,7 @@ services:
         volumes:
             - ./game-source:/game-files
             - ./server-data:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
+            - ./tavern-config:/root/.wine/drive_c/users/root/AppData/Roaming/TheModdingTavern
             - wine-prefix:/root/.wine
         ports:
             # gameserver
@@ -41,6 +40,7 @@ services:
             - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp'
         environment:
             SERVER_PORT: ${SERVER_PORT:-1757}
+            AUTO_PATCH: ${AUTO_PATCH:-true}
             ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
             ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
             ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}
@@ -49,13 +49,19 @@ volumes:
     wine-prefix:
 ```
 
-Then create a folder called `game-source` in the same folder as your `docker-compose.yml` and upload your patched server files to it. `version.dll`, `A Township Tale.exe`, and the `MelonLoader` and `Plugins` folders should all be sitting directly at the root of `game-source`. If any of them aren't, something went wrong. See [docs/patching-installation.md](docs/patching-installation.md) for more detailed information.
+Then create a folder called `game-source` in the same folder as your `docker-compose.yml` and upload the game files to it. `A Township Tale.exe` and the `A Township Tale_Data` folder should be sitting directly at the root of `game-source`. On every start the container patches the install itself, exactly the way TavernLauncher does on Windows (MelonLoader, TavernLib, and the core `Root.Township.dll` patch from the latest TavernLauncher release), and skips anything already current. Already-patched files from TavernLauncher work too. See [docs/patching-installation.md](docs/patching-installation.md) for where to get the base game files.
 
 You can then run `docker compose up -d` to start the server.
 
-On first start, the container will write a default `server-config.yml` into `game-source` if one isn't already there, so you can edit it in place and restart to apply changes. Right now, only `name` and `ports` actually do anything; the rest of the fields exist for future use but aren't read yet. `listing-token` is randomly generated at write time, but the generation is not cryptographic in nature.
+To force a re-patch with the latest releases (after stopping the server with `docker compose down`):
 
-The AppData/settings path within wine is mapped to its own `server-data` folder, so it's persisted and accessible to you lovely people. This is where your saves and server configuration will live.
+```
+docker compose run --rm a-township-container update
+```
+
+To launch without any patching or update checks set `AUTO_PATCH=false` in your `.env`.
+
+Two AppData paths within wine are mapped to their own folders, so they're persisted and accessible to you lovely people: `server-data` (the game's own `A Township Tale` folder, where your world saves live) and `tavern-config` (TavernLib's `TheModdingTavern` folder, holding the config files above).
 
 Setting this up on a rented VPS? There's a full beginner walkthrough in [docs/vps-setup.md](docs/vps-setup.md) covering renting the box, securing it, and getting the container running.
 

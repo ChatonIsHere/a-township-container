@@ -13,6 +13,7 @@ services:
         volumes:
             - ./game-source:/game-files
             - ./server-data:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
+            - ./tavern-config:/root/.wine/drive_c/users/root/AppData/Roaming/TheModdingTavern
             - wine-prefix:/root/.wine
         ports:
             # gameserver
@@ -29,6 +30,8 @@ services:
             - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp'
         environment:
             SERVER_PORT: ${SERVER_PORT:-1757}
+            AUTO_PATCH: ${AUTO_PATCH:-true}
+            DEBUG: ${DEBUG:-false}
             ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
             ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
             ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}

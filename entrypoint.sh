@@ -9,21 +9,20 @@ fi
 
 cd /game-files
 
-if [ ! -f server-config.yml ]; then
-    listing_token=$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 48)
-    cat > server-config.yml <<EOF
-name: 'TMT ATT Docker Image'
-description: 'A server who forgot to change the default config'
-ports:
-  game: 1757
-  forest: 1761
-  rcon: 1758
-max-players: 20
-pc-world: true
-rcon-password: ''
-listing-token: '$listing_token'
-EOF
+if [ "${1:-}" = "update" ]; then
+    /patcher.sh force
+    echo "Update complete, start the server normally to use it"
+    exit 0
 fi
+
+if [ "${AUTO_PATCH:-true}" != "false" ]; then
+    /patcher.sh
+else
+    echo "AUTO_PATCH=false - skipping patch checks"
+fi
+
+# TavernLib generates its JSON configs in here on first launch, but doesn't create the folder itself
+mkdir -p "/root/.wine/drive_c/users/root/AppData/Roaming/TheModdingTavern"
 
 export DISPLAY=:1
 
@@ -46,14 +45,17 @@ mkdir -p MelonLoader
 touch MelonLoader/Latest.log
 tail -F MelonLoader/Latest.log &
 
-# exec replaces the shell with wine so it receives docker stop's signal directly instead of it being swallowed by bash
-exec wine "A Township Tale.exe" \
-    -batchmode \
-    -nographics \
-    /start_server -1 false "${SERVER_PORT:-1757}" \
-    /debug_helper \
-    /force_offline \
-    --melonloader.hideconsole \
-    /access_token "${ATT_ACCESS_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwiVXNlcm5hbWUiOiJTZXJ2ZXIiLCJyb2xlIjoiQWNjZXNzIiwiaXNfdmVyaWZpZWQiOiJ0cnVlIiwiUG9saWN5IjpbImdhbWVfYWNjZXNzX3B1YmxpYyIsInNlcnZlcl9hY2Nlc3NfcHJlX2FscGhhIiwic2VydmVyX2FjY2Vzc190dXRvcmlhbCJdLCJyb2xlcyI6WyJwcmVfYWxwaGFfcGxheWVyIiwicHVibGljX3BsYXllciJdLCJleHAiOjI3ODI5Mjc3MTMsImlzcyI6IkFsdGFXZWJBUEkiLCJhdWQiOiJBbHRhQ2xpZW50In0.XZWt_WnrSG2ITJisUDV_im76MpjQ2xU5Prm0gMBZKjQ}" \
-    /refresh_token "${ATT_REFRESH_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwicm9sZSI6IlJlZnJlc2giLCJleHAiOjI3OTE1NjQxMTMsImlzcyI6IkFsdGFXZWJBUEkiLCJhdWQiOiJBbHRhQ2xpZW50In0.Anle9q8ooVM080W30QY2mt2nAefPlDhkDaz-3VTfIug}" \
+GAME_ARGS=(
+    -batchmode
+    -nographics
+    /start_server -1 false "${SERVER_PORT:-1757}"
+    /force_offline
+    --melonloader.hideconsole
+    /access_token "${ATT_ACCESS_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwiVXNlcm5hbWUiOiJTZXJ2ZXIiLCJyb2xlIjoiQWNjZXNzIiwiaXNfdmVyaWZpZWQiOiJ0cnVlIiwiUG9saWN5IjpbImdhbWVfYWNjZXNzX3B1YmxpYyIsInNlcnZlcl9hY2Nlc3NfcHJlX2FscGhhIiwic2VydmVyX2FjY2Vzc190dXRvcmlhbCJdLCJyb2xlcyI6WyJwcmVfYWxwaGFfcGxheWVyIiwicHVibGljX3BsYXllciJdLCJleHAiOjI3ODI5Mjc3MTMsImlzcyI6IkFsdGFXZWJBUEkiLCJhdWQiOiJBbHRhQ2xpZW50In0.XZWt_WnrSG2ITJisUDV_im76MpjQ2xU5Prm0gMBZKjQ}"
+    /refresh_token "${ATT_REFRESH_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwicm9sZSI6IlJlZnJlc2giLCJleHAiOjI3OTE1NjQxMTMsImlzcyI6IkFsdGFXZWJBUEkiLCJhdWQiOiJBbHRhQ2xpZW50In0.Anle9q8ooVM080W30QY2mt2nAefPlDhkDaz-3VTfIug}"
     /identity_token "${ATT_IDENTITY_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwiVXNlcm5hbWUiOiJTZXJ2ZXIiLCJyb2xlIjoiSWRlbnRpdHkiLCJleHAiOjI3OTE1NjQxMTMsImlzcyI6IkFsdGFXZWJBUEkiLCJhdWQiOiJBbHRhQ2xpZW50In0.1FleaoMleKDMb-fGP64C_825gVIIRdkPuWdy11E3xTk}"
+)
+[ "${DEBUG:-false}" = "true" ] && GAME_ARGS+=(/debug_helper)
+
+# exec replaces the shell with wine so it receives docker stop's signal directly instead of it being swallowed by bash
+exec wine "A Township Tale.exe" "${GAME_ARGS[@]}"
