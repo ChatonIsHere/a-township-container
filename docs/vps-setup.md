@@ -15,7 +15,7 @@ A VPS is just a computer in someone else's datacentre that you rent. You general
 
 You'll also need to make sure you've got the following on-hand:
 
-- Your prepared `game-source` folder, meaning a patched server install with `A Township Tale.exe`, `version.dll`, and the `MelonLoader` and `Plugins` folders sitting directly inside it, exactly as described in [docs/patching-installation.md](patching-installation.md#preparing-the-game-source-zip). Check all four are directly inside `game-source` before going any further
+- Your prepared `game-source` folder, meaning the base game files with `A Township Tale.exe` and the `A Township Tale_Data` folder sitting directly inside it, exactly as described in [docs/patching-installation.md](patching-installation.md#preparing-the-game-source-zip). The container patches them itself on first start, so no patching needed on your end. Check both are directly inside `game-source` before going any further
 - ~$5-10 a month for the VPS itself
 
 ## Generating an SSH key
@@ -248,6 +248,7 @@ services:
         volumes:
             - ./game-source:/game-files
             - ./server-data:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
+            - ./tavern-config:/root/.wine/drive_c/users/root/AppData/Roaming/TheModdingTavern
             - wine-prefix:/root/.wine
         ports:
             # gameserver
@@ -264,6 +265,7 @@ services:
             - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp'
         environment:
             SERVER_PORT: ${SERVER_PORT:-1757}
+            AUTO_PATCH: ${AUTO_PATCH:-true}
             ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
             ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
             ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}
@@ -298,7 +300,7 @@ unzip game-source.zip
 ls
 ```
 
-That `ls` needs to show `A Township Tale.exe`, `version.dll`, `MelonLoader`, and `Plugins` directly. If it shows a single folder instead (like `game-source/game-source/...`), you zipped the `game-source` folder itself instead of just its contents. Fix it with:
+That `ls` needs to show `A Township Tale.exe` and `A Township Tale_Data` directly. If it shows a single folder instead (like `game-source/game-source/...`), you zipped the `game-source` folder itself instead of just its contents. Fix it with:
 
 ```bash
 mv game-source/* game-source/.[!.]* . 2>/dev/null; rmdir game-source
@@ -332,7 +334,7 @@ docker compose down        # stop the server
 docker compose up -d       # start it again
 ```
 
-Your world saves and settings live in `~/att-server/server-data` on the VPS, and that's the folder to back up. Updating the game files or mods later works exactly as described in [the README](../README.md#updating-game-files-or-mods): stop the server, drop the new files into `game-source` (via WinSCP), and start again.
+Your world saves live in `~/att-server/server-data` on the VPS, and the server's config files (`server_settings.json`, `users.json`) in `~/att-server/tavern-config`; those are the folders to back up. Mods and the patch are checked for updates on every server start, and you can force a full re-patch at the latest releases with `docker compose down` followed by `docker compose run --rm a-township-container update`.
 
 Give it a minute or two after the logs settle, then try connecting to the game using your server's IP.
 
@@ -363,7 +365,7 @@ That's Ubuntu's `needrestart` tool being chatty. Press Enter to accept the defau
 Your session is older than the group change from the Docker section. Log out of PuTTY and back in. If it persists, run `groups` and check that `docker` is in the list.
 
 **The container exits with "A Township Tale.exe is missing from /game-files".**
-The container can't find the game at the root of `game-source`, which is almost always the nested-folder problem from the upload section. `ls ~/att-server/game-source` needs to show `A Township Tale.exe`, `version.dll`, `MelonLoader`, and `Plugins` directly, not another folder.
+The container can't find the game at the root of `game-source`, which is almost always the nested-folder problem from the upload section. `ls ~/att-server/game-source` needs to show `A Township Tale.exe` and `A Township Tale_Data` directly, not another folder.
 
 **The server runs but nobody can connect from the game.**
 Work through these in order:

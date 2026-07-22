@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget gnupg2 ca-certificates xvfb \
+        wget curl jq gnupg2 ca-certificates xvfb \
         cabextract unzip p7zip-full winetricks xdg-user-dirs dbus-x11 && \
     mkdir -pm755 /etc/apt/keyrings && \
     wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
@@ -37,6 +37,7 @@ RUN mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR" && \
 WORKDIR /game-files
 
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY patcher.sh /patcher.sh
+RUN chmod +x /entrypoint.sh /patcher.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
