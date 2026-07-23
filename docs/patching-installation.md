@@ -51,7 +51,7 @@ The container expects a folder called `game-source` with `A Township Tale.exe` a
 
 If you see a nested folder instead, the backup was zipped as the folder itself rather than its contents. Extract it, then re-zip the files _inside_ the folder (select all → Send to → Compressed folder), making sure you select the files rather than the folder icon.
 
-On its first start, TavernLib generates its JSON config files (`server_settings.json` and `users.json`) into the `tavern-config` folder next to your `docker-compose.yml`. See [the README](../README.md#running-the-server) for what's actually configurable in them right now.
+On its first start, TavernLib generates its JSON config files (`server_settings.json` and `users.json`) into the `tavern-config` folder next to your `docker-compose.yml`. See [the README](../README.md#running-the-server) for what's actually configurable in them right now. `tavern_server.json`'s `server_port` is kept in sync with `SERVER_PORT`.
 
 ## Troubleshooting
 
