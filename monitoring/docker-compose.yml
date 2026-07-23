@@ -1,0 +1,88 @@
+services:
+    postgres:
+        image: postgres:16-alpine
+        container_name: att-monitoring-postgres
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: metrics
+            POSTGRES_USER: metrics
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-metrics}
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+            - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+        ports:
+            - '127.0.0.1:5432:5432'
+
+    collector:
+        build: ./collector
+        container_name: att-monitoring-collector
+        restart: unless-stopped
+        # NOTE: previously used network_mode: host for the whole container to
+        # read players-online, but on a WSL2 dev host that repeatedly
+        # crashed/restarted the whole VM (likely conflicting with mirrored
+        # networking mode). nsenter-ing into just the host's net namespace
+        # for the one conntrack query (via the /host_net_ns mount below)
+        # gets the same data without putting the whole container on the
+        # host network - keep it that way, don't reintroduce network_mode:
+        # host here.
+        cap_add:
+            - NET_ADMIN
+            - SYS_ADMIN
+        environment:
+            TARGET_CONTAINER: ${TARGET_CONTAINER:-a-township-container}
+            GAME_PORT: ${GAME_PORT:-1757}
+            POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-5}
+            PLAYER_ONLINE_THRESHOLD_SECONDS: ${PLAYER_ONLINE_THRESHOLD_SECONDS:-10}
+            POSTGRES_HOST: postgres
+            POSTGRES_PORT: 5432
+            POSTGRES_DB: metrics
+            POSTGRES_USER: metrics
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-metrics}
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - /proc/loadavg:/host/proc/loadavg:ro
+            # read-only handle on the host's network namespace, so
+            # collector.py can nsenter into it just to query conntrack (that
+            # namespace is where Docker's DNAT'd game sessions actually live)
+            - /proc/1/ns/net:/host_net_ns:ro
+        depends_on:
+            - postgres
+
+    web:
+        build: ./web
+        container_name: att-monitoring-web
+        restart: unless-stopped
+        environment:
+            POSTGRES_HOST: postgres
+            POSTGRES_PORT: 5432
+            POSTGRES_DB: metrics
+            POSTGRES_USER: metrics
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-metrics}
+        # only reachable via Caddy (or localhost on this host) now - not
+        # published externally on its own
+        ports:
+            - '127.0.0.1:3000:8080'
+        depends_on:
+            - postgres
+
+    caddy:
+        build: ./caddy
+        container_name: att-monitoring-caddy
+        restart: unless-stopped
+        environment:
+            DOMAIN: ${DOMAIN:-att.doxbox.org}
+        volumes:
+            - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+            - caddy-data:/data
+            - caddy-config:/config
+        ports:
+            - '80:80'
+            - '443:443'
+            - '443:443/udp'
+        depends_on:
+            - web
+
+volumes:
+    postgres-data:
+    caddy-data:
+    caddy-config:

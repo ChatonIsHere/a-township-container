@@ -1,0 +1,24 @@
+{$DOMAIN:att.doxbox.org} {
+	encode zstd gzip
+
+	rate_limit {
+		# /api/* hits Postgres per request, so it gets a tighter budget than
+		# the rest of the site (static assets, the page shell, the websocket
+		# upgrade) - both zones apply together, per client IP
+		zone api {
+			match {
+				path /api/*
+			}
+			key {remote_host}
+			events 30
+			window 1m
+		}
+		zone site {
+			key {remote_host}
+			events 120
+			window 1m
+		}
+	}
+
+	reverse_proxy web:8080
+}
