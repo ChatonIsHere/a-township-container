@@ -338,6 +338,19 @@ Your world saves live in `~/att-server/server-data` on the VPS, and the server's
 
 Give it a minute or two after the logs settle, then try connecting to the game using your server's IP.
 
+## Updating the container
+
+New versions of this container get published to `ghcr.io/chatonishere/a-township-container:latest` automatically, so updating is just pulling the newer image and recreating the container with it:
+
+```bash
+cd ~/att-server
+docker compose pull
+docker compose up -d
+docker image prune -f   # optional, drops the now-unused old image
+```
+
+Your game files, world saves, and config aren't touched by this - they live in `game-source`, `server-data`, and `tavern-config` on the VPS, outside the image entirely. Mods and the core patch are still checked/applied on every start regardless of which image version you're on, same as described above.
+
 ## Troubleshooting
 
 Things get a little technical from here on out, so I don't blame you if you start pinging people for help.

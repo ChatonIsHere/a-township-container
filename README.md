@@ -61,6 +61,13 @@ docker compose run --rm a-township-container update
 
 To launch without any patching or update checks set `AUTO_PATCH=false` in your `.env`.
 
+To update the container itself to the latest published image:
+
+```
+docker compose pull
+docker compose up -d
+```
+
 Two AppData paths within wine are mapped to their own folders, so they're persisted and accessible to you lovely people: `server-data` (the game's own `A Township Tale` folder, where your world saves live) and `tavern-config` (TavernLib's `TheModdingTavern` folder, holding the config files above).
 
 Setting this up on a rented VPS? There's a full beginner walkthrough in [docs/vps-setup.md](docs/vps-setup.md) covering renting the box, securing it, and getting the container running.
