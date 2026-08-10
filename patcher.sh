@@ -8,7 +8,7 @@ FORCE="${1:-}"
 
 MELONLOADER_URL="https://github.com/LavaGang/MelonLoader/releases/latest/download/MelonLoader.x64.zip"
 TAVERNLIB_URL="https://github.com/ModdingTavern/TavernLib/releases/latest/download/TavernLib.dll"
-LAUNCHER_LATEST_URL="https://github.com/ModdingTavern/TavernLauncher/releases/latest"
+BASEPATCH_URL="https://github.com/ModdingTavern/TavernDefaults/releases/latest/download/themoddingtavern.dll"
 
 if [ ! -d "$MANAGED_DIR" ]; then
     echo "PATCHER: $MANAGED_DIR not found, game-source must contain the base game files" >&2
@@ -27,7 +27,7 @@ meta_set() {
 redirect_of() { curl -sfI -o /dev/null -w '%{redirect_url}' "$1"; }
 
 melonloader_latest_tag() { redirect_of "$MELONLOADER_URL" | sed -n 's|.*/releases/download/\([^/]*\)/.*|\1|p'; }
-launcher_latest_tag() { redirect_of "$LAUNCHER_LATEST_URL" | sed 's|.*/||'; }
+basepatch_latest_tag() { redirect_of "$BASEPATCH_URL" | sed -n 's|.*/releases/download/\([^/]*\)/.*|\1|p'; }
 
 tavernlib_fingerprint() {
     curl -sfIL "$TAVERNLIB_URL" | tr -d '\r' | awk '
@@ -81,21 +81,19 @@ else
 fi
 
 installed="no"
-[ -f "$MANAGED_DIR/Root.Township.dll" ] && [ -n "$(meta_get launcher_tag)" ] && installed="yes"
-latest=$(launcher_latest_tag || true)
-if up_to_date "$installed" launcher_tag "$latest"; then
-    echo "PATCHER: core patch is current (TavernLauncher $(meta_get launcher_tag))"
+[ -f "$MANAGED_DIR/Root.Township.dll" ] && [ -n "$(meta_get basepatch_tag)" ] && installed="yes"
+latest=$(basepatch_latest_tag || true)
+if up_to_date "$installed" basepatch_tag "$latest"; then
+    echo "PATCHER: core patch is current (TavernDefaults $(meta_get basepatch_tag))"
 else
     if [ -z "$latest" ] && [ "$installed" = "no" ]; then
         echo "PATCHER: core patch is not applied and GitHub is unreachable" >&2
         exit 1
     fi
-    echo "PATCHER: applying core patch from TavernLauncher $latest"
-    curl -sfL -o "$TMP_DIR/launcher.zip" \
-        "https://github.com/ModdingTavern/TavernLauncher/releases/latest/download/TavernLauncher-Server-$latest.zip"
-    unzip -q -j -o "$TMP_DIR/launcher.zip" "*/Patch/themoddingtavern.dll" -d "$TMP_DIR"
-    cp "$TMP_DIR/themoddingtavern.dll" "$MANAGED_DIR/Root.Township.dll"
-    meta_set launcher_tag "$latest"
+    echo "PATCHER: applying core patch from TavernDefaults $latest"
+    curl -sfL -o "$TMP_DIR/themoddingtavern.dll" "$BASEPATCH_URL"
+    mv "$TMP_DIR/themoddingtavern.dll" "$MANAGED_DIR/Root.Township.dll"
+    meta_set basepatch_tag "$latest"
 fi
 
 echo "PATCHER: done"
