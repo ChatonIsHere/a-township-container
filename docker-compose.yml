@@ -6,10 +6,6 @@ services:
         # Uncomment the following lines to limit CPU and memory usage
         # cpus: 2
         # mem_limit: 4g
-        cap_add:
-            - SYS_PTRACE
-        security_opt:
-            - seccomp:unconfined
         volumes:
             - ./game-source:/game-files
             - ./server-data:/root/.wine/drive_c/users/root/AppData/Roaming/A Township Tale
