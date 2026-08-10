@@ -45,7 +45,7 @@ volumes:
     wine-prefix:
 ```
 
-Then create a folder called `game-source` in the same folder as your `docker-compose.yml` and upload the game files to it. `A Township Tale.exe` and the `A Township Tale_Data` folder should be sitting directly at the root of `game-source`. On every start the container patches the install itself, exactly the way TavernLauncher does on Windows (MelonLoader, TavernLib, and the core `Root.Township.dll` patch from the latest TavernLauncher release), and skips anything already current. Already-patched files from TavernLauncher work too. See [docs/patching-installation.md](docs/patching-installation.md) for where to get the base game files.
+Then create a folder called `game-source` in the same folder as your `docker-compose.yml` and upload the game files to it. `A Township Tale.exe` and the `A Township Tale_Data` folder should be sitting directly at the root of `game-source`. On every start the container patches the install itself, exactly the way TavernLauncher does on Windows (the latest MelonLoader, TavernLib, and TavernDefaults core `Root.Township.dll` patch), and skips anything already current. Already-patched files from TavernLauncher work too. See [docs/patching-installation.md](docs/patching-installation.md) for where to get the base game files.
 
 You can then run `docker compose up -d` to start the server.
 
