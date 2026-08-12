@@ -50,34 +50,44 @@ WINE_USER="$(id -un 2>/dev/null || id -u)"
 ROAMING="$WINEPREFIX/drive_c/users/$WINE_USER/AppData/Roaming"
 
 # the compose setup exposes the saves and the TavernLib config as their own mounts, which a panel
-# can't do - and the panel file managers refuse to follow symlinks (Wings errors on them), so a
-# link at the root pointing into the prefix just renders as a broken-looking file. Instead the
-# real directories live at the top of the server root where they're browsable, and the prefix
-# paths the game writes to are the symlinks, pointing back out at them - wine follows symlinks
-# fine, it's only the file managers that won't
+# can't do - and panel file managers can refuse to follow symlinks (Wings flat-out errors on
+# them), so a link at the root pointing into the prefix can render as a broken-looking file.
+# Instead the real directories live at the top of the server root where they're browsable, and
+# the prefix paths the game writes to are the symlinks, pointing back out at them - wine follows
+# symlinks fine, it's only the file managers that won't
 link_into_prefix() {
     top="/home/container/$1"
     roam="$ROAMING/$2"
     # earlier versions linked the other way round: a symlink at the top, the real directory in
-    # the prefix. Clear the old link BEFORE touching the prefix directory, or the migration
-    # below would resolve through it and copy that directory into itself
-    [ -L "$top" ] && rm "$top"
-    mkdir -p "$top" "$ROAMING"
+    # the prefix. Anything at the top that isn't a real directory - that old link, or a stray
+    # file left by an archive round-trip that materialised it - has to go BEFORE the prefix
+    # directory is touched, or the migration below would resolve through the old link and copy
+    # the directory into itself
+    { [ -d "$top" ] && [ ! -L "$top" ]; } || rm -rf "$top"
+    mkdir -p "$ROAMING"
     if [ -d "$roam" ] && [ ! -L "$roam" ]; then
-        # move what the game already wrote (world saves included) out to the browsable copy
-        cp -a "$roam/." "$top/"
-        rm -rf "$roam"
+        # move what the game already wrote (world saves included) out to the browsable spot: a
+        # rename when the top is empty, so migrating never needs spare disk a quota'd server
+        # might not have; the copy fallback only runs when both sides hold data (an old-layout
+        # .wine backup restored over an already-migrated install), where the restored files win
+        if [ ! -e "$top" ]; then
+            mv "$roam" "$top"
+        else
+            cp -a "$roam/." "$top/"
+            rm -rf "$roam"
+        fi
     fi
-    # relative, so the link also resolves when the volume is inspected or restored outside the
-    # container; Roaming sits six levels below the server root (.wine/drive_c/users/<user>/AppData/Roaming)
-    ln -sfn "../../../../../../$1" "$roam"
+    mkdir -p "$top"
+    # derived rather than hardcoded so it survives a WINEPREFIX override, and relative so it
+    # still resolves when the volume is inspected or restored outside the container
+    ln -sfn "$(realpath --relative-to="$ROAMING" "$top")" "$roam"
 }
 link_into_prefix server-data "A Township Tale"
 link_into_prefix tavern-config TheModdingTavern
 
-# TavernLib generates its JSON configs in here on first launch; the path resolves through the
-# prefix symlink into the tavern-config directory at the server root
-TAVERN_CONFIG_DIR="$ROAMING/TheModdingTavern"
+# TavernLib generates its JSON configs in here on first launch - the game finds them through the
+# prefix symlink, so the real directory can be used directly
+TAVERN_CONFIG_DIR="/home/container/tavern-config"
 
 TAVERN_SERVER_JSON="$TAVERN_CONFIG_DIR/tavern_server.json"
 [ -f "$TAVERN_SERVER_JSON" ] || echo '{}' > "$TAVERN_SERVER_JSON"

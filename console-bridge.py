@@ -268,8 +268,13 @@ def pump_stdin(ws):
     """Panel console input arrives on stdin, one command per line."""
     # AMP hands us a pipe and doesn't echo what was typed, so without our echo the console
     # shows replies with no sign of the command that produced them. Wings attaches a TTY,
-    # and a TTY echoes input by itself - echoing there would show every command twice
-    echo = not sys.stdin.isatty()
+    # and a TTY echoes input by itself - echoing there would show every command twice.
+    # TAVERN_CONSOLE_ECHO=true/false overrides the guess for a panel that fits neither
+    override = os.environ.get("TAVERN_CONSOLE_ECHO", "").strip().lower()
+    if override:
+        echo = override in ("1", "true", "yes", "on")
+    else:
+        echo = not sys.stdin.isatty()
     cmd_id = 0
     for line in sys.stdin:
         cmd = line.strip()
