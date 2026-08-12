@@ -41,10 +41,12 @@ App.UseLinuxIOREDIR=False
 # tree entirely (the same reason att-launch.sh has to stop it by name), so neither the direct
 # child nor the child tree ever contains it - AMP reads ~0 CPU/memory either way. Find the game
 # by matching its command line instead, the way the stock wine/proton templates do. The pattern
-# matches the bare exe name because the launch script invokes it with a relative path
+# is anchored on the wine drive path because the start.exe stub keeps the exe name in its own
+# command line ("start.exe /exec A Township Tale.exe ...") and launches first - a bare-name
+# match latches onto that idle stub and still reads zero
 App.MonitorDirectChildOnly=False
 App.DumpFullChildProcessTree=False
-App.MonitorChildProcessName=^.*A Township Tale\.exe.*$
+App.MonitorChildProcessName=^Z:\\.*A Township Tale\.exe.*$
 App.AppSettings={}
 App.UpdateSources=[]
 App.EnvironmentVariables={"SERVER_PORT":"{{$ServerPort}}","AUTO_PATCH":"{{AutoPatch}}","DEBUG":"{{DebugHelper}}","RCON_PORT":"{{$RconPort}}","ATT_ACCESS_TOKEN":"{{AccessToken}}","ATT_REFRESH_TOKEN":"{{RefreshToken}}","ATT_IDENTITY_TOKEN":"{{IdentityToken}}"}
