@@ -16,6 +16,10 @@ jobs:
             contents: read
             packages: write
         strategy:
+            # the variants are independent images, so one failing must not cancel the others midway -
+            # with the default fail-fast a quick failure in the egg or amp leg takes the standalone
+            # leg's :latest push down with it
+            fail-fast: false
             matrix:
                 include:
                     # standalone image, tagged exactly as before so existing users are unaffected
@@ -43,12 +47,14 @@ jobs:
               uses: docker/metadata-action@v5
               with:
                   images: ${{ env.IMAGE_NAME }}
-                  # the suffix distinguishes the variants: latest / latest-egg / latest-amp (and the same for version tags)
-                  flavor: |
-                      suffix=${{ matrix.suffix }}
+                  # every tag is spelled out with the variant suffix baked into its value rather than
+                  # applied through flavor: flavor's suffix is silently dropped from the latest tag, so
+                  # the egg and amp legs each published a bare :latest and raced the standalone one for it
+                  # (that's how :latest ended up being the egg image). {{is_default_branch}} also resolves
+                  # true on tag pushes, which is what let the release candidates move :latest at all
                   tags: |
-                      type=raw,value=latest,enable={{is_default_branch}}
-                      type=ref,event=tag
+                      type=raw,value=latest${{ matrix.suffix }},enable=${{ github.ref == 'refs/heads/main' }}
+                      type=raw,value=${{ github.ref_name }}${{ matrix.suffix }},enable=${{ github.ref != 'refs/heads/main' }}
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
