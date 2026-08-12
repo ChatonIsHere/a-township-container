@@ -25,13 +25,19 @@ meta_set() {
     jq --arg k "$1" --arg v "$2" '.[$k] = $v' "$META" > "$tmp" && mv "$tmp" "$META"
 }
 
-redirect_of() { curl -sfI -o /dev/null -w '%{redirect_url}' "$1"; }
+# one dropped request from GitHub must not kill the boot (set -e), so everything that
+# talks to it retries a few times before giving up
+CURL_RETRY="--retry 3 --retry-delay 2 --retry-all-errors"
+
+fetch() { curl -sfL $CURL_RETRY -o "$1" "$2"; }
+
+redirect_of() { curl -sfI $CURL_RETRY -o /dev/null -w '%{redirect_url}' "$1"; }
 
 melonloader_latest_tag() { redirect_of "$MELONLOADER_URL" | sed -n 's|.*/releases/download/\([^/]*\)/.*|\1|p'; }
 basepatch_latest_tag() { redirect_of "$BASEPATCH_URL" | sed -n 's|.*/releases/download/\([^/]*\)/.*|\1|p'; }
 
 tavernlib_fingerprint() {
-    curl -sfIL "$TAVERNLIB_URL" | tr -d '\r' | awk '
+    curl -sfIL $CURL_RETRY "$TAVERNLIB_URL" | tr -d '\r' | awk '
         tolower($1) == "etag:" { e = $2 }
         tolower($1) == "last-modified:" { sub(/^[^ ]+ /, ""); l = $0 }
         END { print (e != "" ? e : l) }'
@@ -59,7 +65,7 @@ else
         exit 1
     fi
     echo "PATCHER: installing MelonLoader $latest"
-    curl -sfL -o "$TMP_DIR/MelonLoader.zip" "$MELONLOADER_URL"
+    fetch "$TMP_DIR/MelonLoader.zip" "$MELONLOADER_URL"
     unzip -q -o "$TMP_DIR/MelonLoader.zip" -d "$GAME_DIR"
     meta_set melonloader_tag "$latest"
 fi
@@ -76,7 +82,7 @@ else
     fi
     echo "PATCHER: installing latest TavernLib"
     mkdir -p "$GAME_DIR/Plugins"
-    curl -sfL -o "$TMP_DIR/TavernLib.dll" "$TAVERNLIB_URL"
+    fetch "$TMP_DIR/TavernLib.dll" "$TAVERNLIB_URL"
     mv "$TMP_DIR/TavernLib.dll" "$GAME_DIR/Plugins/TavernLib.dll"
     meta_set tavernlib_fingerprint "$latest"
 fi
@@ -92,7 +98,7 @@ else
         exit 1
     fi
     echo "PATCHER: applying core patch from TavernDefaults $latest"
-    curl -sfL -o "$TMP_DIR/themoddingtavern.dll" "$BASEPATCH_URL"
+    fetch "$TMP_DIR/themoddingtavern.dll" "$BASEPATCH_URL"
     mv "$TMP_DIR/themoddingtavern.dll" "$MANAGED_DIR/Root.Township.dll"
     meta_set basepatch_tag "$latest"
 fi
