@@ -14,6 +14,7 @@ awkward on the Debian base the AMP image builds on.
 import base64
 import json
 import os
+import re
 import socket
 import struct
 import sys
@@ -29,8 +30,15 @@ CONNECT_TIMEOUT = int(os.environ.get("TAVERN_CONSOLE_TIMEOUT", "900"))
 OP_TEXT, OP_BINARY, OP_CLOSE, OP_PING, OP_PONG = 0x1, 0x2, 0x8, 0x9, 0xA
 
 
+def emit(line):
+    """One write per line: the recv loop and the stdin echo run on different threads, and print's
+    separate text/newline writes can interleave into torn lines in the panel console."""
+    sys.stdout.write(line + "\n")
+    sys.stdout.flush()
+
+
 def log(msg):
-    print(f"[console] {msg}", flush=True)
+    emit(f"[console] {msg}")
 
 
 class WebSocket:
@@ -192,10 +200,13 @@ def render_value(value):
         return "(none)"
     if is_table(value):
         return render_table(value)
-    try:
-        return json.dumps(value, indent=2)
-    except (TypeError, ValueError):
-        return str(value)
+    # everything here came out of json.loads, so json.dumps can't fail on it
+    return json.dumps(value, indent=2)
+
+
+# a .NET full type name: dotted namespace segments, optionally a generic arity marker and its
+# bracketed type arguments (System.Collections.Generic.List`1[Alta.Console.Commands.ModInfo])
+TYPE_NAME = re.compile(r"[A-Za-z_][\w`+]*(\.[\w`+]+)+(\[.*\])?")
 
 
 def render_exception(exception):
@@ -209,11 +220,7 @@ def render_exception(exception):
         )
         if described:
             return described
-        try:
-            return json.dumps(exception, indent=2)
-        except (TypeError, ValueError):
-            pass
-    return str(exception)
+    return render_value(exception)
 
 
 def format_message(raw):
@@ -230,22 +237,25 @@ def format_message(raw):
 
     if kind == "CommandResult":
         if not isinstance(data, dict):
-            return "" if data is None else str(data).rstrip("\n")
+            return render_value(data)
 
         exception = data.get("Exception")
         if exception:
             return f"[error] {render_exception(exception)}"
 
         # a command returning a value answers with CommandResult<T>, whose ResultString is only
-        # Result.ToString() - a bare type name for anything that isn't already a string, which is
-        # where System.Collections.Generic.List`1[System.Object] came from. The real payload is
-        # serialised alongside it in Result, so render that instead and only fall back to
-        # ResultString for the plain CommandResult, which has no Result field at all
+        # Result.ToString() - a bare type name for anything without a real ToString, which is
+        # where System.Collections.Generic.List`1[System.Object] came from. A ToString somebody
+        # actually wrote is the intended output though, so keep any ResultString that doesn't
+        # read as a type name, and render the serialised Result payload otherwise
+        result_string = data.get("ResultString")
+        if isinstance(result_string, str) and result_string.strip() and not TYPE_NAME.fullmatch(result_string.strip()):
+            return result_string.rstrip("\n")
         if "Result" in data:
             rendered = render_value(data.get("Result"))
             if rendered:
                 return rendered
-        return str(data.get("ResultString") or "").rstrip("\n")
+        return scalar(result_string).rstrip("\n")
 
     if kind == "SystemMessage":
         return f"[console] {data}"
@@ -264,7 +274,7 @@ def pump_stdin(ws):
         cmd_id += 1
         # neither panel echoes what was typed, so without this the console shows replies with no
         # sign of the command that produced them - print before sending so it stays in order
-        print(f"> {cmd}", flush=True)
+        emit(f"> {cmd}")
         try:
             ws.send_text(json.dumps({"id": cmd_id, "content": cmd}))
         except OSError as exc:
@@ -318,7 +328,7 @@ def main():
                 return 0
             text = format_message(raw)
             if text:
-                print(text, flush=True)
+                emit(text)
     except (OSError, ConnectionError) as exc:
         log(f"console connection lost: {exc}")
         return 0
