@@ -51,8 +51,8 @@ Hit start and watch the console. The first boot copies the wine prefix into plac
 
 A few things that moved compared to the compose setup:
 
-- The server directory holds `game-source` (the game files you uploaded), `.wine` (the prefix), and two shortcuts: `server-data` and `tavern-config`, named after the folders the compose setup mounts. Those two are symlinks, created on every start, pointing at your world saves and at TavernLib's config (`server_settings.json`, `users.json`) inside the prefix. They're there so you don't have to dig, the real locations are `.wine/drive_c/users/container/AppData/Roaming/A Township Tale` and `.../Roaming/TheModdingTavern`
-- Back both of those up, and do not delete the `.wine` folder thinking it's disposable, your saves are inside it. If your panel is configured to run containers as a uid other than the default, that `container` folder is named after the uid number instead, so check what's actually there before assuming
+- The server directory holds `game-source` (the game files you uploaded), `.wine` (the prefix), and two regular folders named after the compose setup's mounts: `server-data` (your world saves) and `tavern-config` (TavernLib's `server_settings.json` and `users.json`). The game writes to paths buried inside the prefix, but those are symlinks pointing back out at these two folders - what you browse at the root is the real data, not a shortcut
+- Back up `server-data` and `tavern-config`. On older versions of this image the links pointed the other way and the real data lived inside `.wine`; the first start on the current version moves it out automatically
 - `tavern_server.json`'s `server_port` is kept in sync with your primary allocation automatically
 - To force a full re-patch, delete `.att-patch-meta.json` from the server's root directory and restart. To skip patching entirely, set the `Auto patch` variable to `false`
 
@@ -98,9 +98,9 @@ The template also surfaces TavernLib's own configuration in AMP, under `Server` 
 
 You can type commands into AMP's console too. TavernLib closes the game's built-in remote console and serves its own over a websocket on the RCON port, so the image bridges that onto the console: whatever you type is sent to the server, and console output appears alongside the log. It connects once the server finishes starting, and prints a single line if it can't (the server still runs normally).
 
-The instance's app directory holds `game-source` (the game files), `.wine` (the prefix), and `server-data` and `tavern-config` shortcuts pointing at your saves and TavernLib's config inside the prefix, named after the folders the compose setup mounts. Those two are symlinks recreated on every start, so deleting one costs nothing.
+The instance's app directory holds `game-source` (the game files), `.wine` (the prefix), and two regular folders named after the compose setup's mounts: `server-data` (your world saves) and `tavern-config` (TavernLib's config). The game reaches them through symlinks inside the prefix, so what you browse at the top is the real data, not a shortcut.
 
-Same warning as the egg setup: your world saves live *inside* `.wine`, under `drive_c/users/<user>/AppData/Roaming/A Township Tale` (with TavernLib's config next door in `.../Roaming/TheModdingTavern`). Those are the folders to back up, and the `.wine` folder is not disposable.
+Same as the egg setup: back up `server-data` and `tavern-config`. On older versions of this image the real data lived inside `.wine` with shortcuts at the top instead; the first start on the current version moves it out automatically.
 
 ## Building the panel images yourself
 
@@ -136,4 +136,4 @@ Classic Controller/Target symptom: the template is on the controller but not on 
 Same checklist as the VPS guide: all four ports (`1757`, `1760`, `1761`, `1762` by default) need allocations/port bindings in the panel and need to be open in any host-level firewall in front of the node. Remember `1762` can't be moved.
 
 **Wine complains about the prefix, or the server behaves strangely after working before.**
-The wine prefix can be rebuilt, but your saves live inside it, so don't just delete it. Stop the server, back up `.wine/drive_c/users/container/AppData/Roaming/A Township Tale` (your saves!) and `.../Roaming/TheModdingTavern` (your config), delete the `.wine` folder, start the server once so a fresh prefix gets copied in, then put both folders back and restart.
+The wine prefix can be rebuilt. Stop the server, delete the `.wine` folder, and start again so a fresh prefix gets copied into place - your saves and config live in `server-data` and `tavern-config` at the root and get relinked into the fresh prefix automatically. One exception: if the server last ran on an older version of this image (where that data lived *inside* `.wine`), start it once on the current version first so the data gets moved out, or back up those two folders from inside `.wine/drive_c/users/<user>/AppData/Roaming/` before deleting anything.

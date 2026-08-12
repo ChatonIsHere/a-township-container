@@ -47,22 +47,42 @@ fi
 # that exactly, or the config gets written somewhere the game never looks
 WINE_USER="$(id -un 2>/dev/null || id -u)"
 
-# TavernLib generates its JSON configs in here on first launch, but doesn't create the folder itself
-TAVERN_CONFIG_DIR="$WINEPREFIX/drive_c/users/$WINE_USER/AppData/Roaming/TheModdingTavern"
-mkdir -p "$TAVERN_CONFIG_DIR"
+ROAMING="$WINEPREFIX/drive_c/users/$WINE_USER/AppData/Roaming"
+
+# the compose setup exposes the saves and the TavernLib config as their own mounts, which a panel
+# can't do - and the panel file managers refuse to follow symlinks (Wings errors on them), so a
+# link at the root pointing into the prefix just renders as a broken-looking file. Instead the
+# real directories live at the top of the server root where they're browsable, and the prefix
+# paths the game writes to are the symlinks, pointing back out at them - wine follows symlinks
+# fine, it's only the file managers that won't
+link_into_prefix() {
+    top="/home/container/$1"
+    roam="$ROAMING/$2"
+    # earlier versions linked the other way round: a symlink at the top, the real directory in
+    # the prefix. Clear the old link BEFORE touching the prefix directory, or the migration
+    # below would resolve through it and copy that directory into itself
+    [ -L "$top" ] && rm "$top"
+    mkdir -p "$top" "$ROAMING"
+    if [ -d "$roam" ] && [ ! -L "$roam" ]; then
+        # move what the game already wrote (world saves included) out to the browsable copy
+        cp -a "$roam/." "$top/"
+        rm -rf "$roam"
+    fi
+    # relative, so the link also resolves when the volume is inspected or restored outside the
+    # container; Roaming sits six levels below the server root (.wine/drive_c/users/<user>/AppData/Roaming)
+    ln -sfn "../../../../../../$1" "$roam"
+}
+link_into_prefix server-data "A Township Tale"
+link_into_prefix tavern-config TheModdingTavern
+
+# TavernLib generates its JSON configs in here on first launch; the path resolves through the
+# prefix symlink into the tavern-config directory at the server root
+TAVERN_CONFIG_DIR="$ROAMING/TheModdingTavern"
 
 TAVERN_SERVER_JSON="$TAVERN_CONFIG_DIR/tavern_server.json"
 [ -f "$TAVERN_SERVER_JSON" ] || echo '{}' > "$TAVERN_SERVER_JSON"
 tmp=$(mktemp)
 jq --argjson port "${SERVER_PORT:-1757}" '.server_port = $port' "$TAVERN_SERVER_JSON" > "$tmp" && mv "$tmp" "$TAVERN_SERVER_JSON"
-
-# the compose setup exposes the saves and the TavernLib config as their own mounts, which a panel
-# can't do - link them to the top of the server directory instead so they're one click from the file
-# manager root rather than buried six levels deep in the prefix
-SAVE_DIR="$WINEPREFIX/drive_c/users/$WINE_USER/AppData/Roaming/A Township Tale"
-mkdir -p "$SAVE_DIR"
-ln -sfn "$SAVE_DIR" /home/container/server-data
-ln -sfn "$TAVERN_CONFIG_DIR" /home/container/tavern-config
 
 export DISPLAY=:1
 
