@@ -1,9 +1,11 @@
 {
     "id": "8f3c1d47-2b5e-4a91-9c6f-7e0d3a85b2f4",
-    "authors": ["ethan@ehsawyer.uk"],
+    "authors": [
+        "ethan@ehsawyer.uk"
+    ],
     "origin": "https://github.com/ChatonIsHere/a-township-container.git",
     "url": "https://github.com/ChatonIsHere/a-township-container",
-    "imagefile": "",
+    "imagefile": "att.jpg",
     "prefix": "ATT",
     "repotype": "AppTemplates"
 }
