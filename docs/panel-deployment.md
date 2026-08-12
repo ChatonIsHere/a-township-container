@@ -94,7 +94,7 @@ If you'd rather pull them in as a configuration repository (`Configuration` → 
 
 The `Auto patch` and `Debug helper` settings and the three token fields in AMP's configuration UI map to the same `AUTO_PATCH`, `DEBUG`, and `ATT_*_TOKEN` values the compose setup uses. Leave the tokens empty to use the offline server tokens.
 
-The template also surfaces TavernLib's own configuration in AMP, under `Server` (from `server_settings.json`: name, password, player limit, listing, whitelist) and `World` (from `ServerConfiguration.json`: saving, time, PVP, experience multipliers, physics). Both files only exist once the server has started and generated them, so the values appear after the first successful boot rather than before it. Editing them in AMP writes to the same files you'd otherwise edit by hand.
+The template also surfaces TavernLib's own configuration in AMP, all under the `A Township Tale` section of the configuration menu: the `Listing` and `Access` groups come from `server_settings.json` (name, password, player limit, region, whitelist), and the world/gameplay groups (`Saving` through `Performance`) from `ServerConfiguration.json`. Both files only exist once the server has started and generated them, so the values appear after the first successful boot rather than before it. Editing them in AMP writes to the same files you'd otherwise edit by hand.
 
 You can type commands into AMP's console too. TavernLib closes the game's built-in remote console and serves its own over a websocket on the RCON port, so the image bridges that onto the console: whatever you type is sent to the server, and console output appears alongside the log. It connects once the server finishes starting, and prints a single line if it can't (the server still runs normally).
 
