@@ -88,7 +88,7 @@ If you'd rather pull them in as a configuration repository (`Configuration` → 
 ### Creating the instance
 
 1. Create a new instance and pick `A Township Tale` as the application. It requires Docker, since the server runs inside `ghcr.io/chatonishere/a-township-container:latest-amp` which carries the wine setup and patcher
-2. Port defaults match the other setups: `1757` game, `1760` rcon, `1761` forest, and `1762` authentication (fixed, TavernLib hardcodes it)
+2. Port defaults match the other setups: `1757` game, `1760` rcon, `1761` forest, and `1762` authentication (fixed, TavernLib hardcodes it). Give the instance a memory limit while you're there (4GB is the usual recommendation) - it also becomes the denominator of AMP's memory gauge, which otherwise reads against the host's entire RAM
 3. Upload the contents of your prepared `game-source` folder into the instance's `game-source` directory via AMP's file manager or SFTP, so `A Township Tale.exe` and `A Township Tale_Data` sit directly inside it. That folder is created for you on the first start attempt if it isn't there yet. Zip it first and unzip it there, uploading ~4.4GB as individual files is miserable
 4. Start the instance. The first start copies the wine prefix into place and downloads the mods and patch, so it needs outbound internet and a little patience. AMP marks the instance as running once TavernLib's `Starting auth listening cycle` line appears in the console
 
