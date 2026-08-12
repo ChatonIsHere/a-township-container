@@ -71,6 +71,7 @@ mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null || true
 
 # the game still needs a display to exist even with -batchmode -nographics, or wine dies as soon as it tries to create a window
 Xvfb "$DISPLAY" -screen 0 1024x768x24 &
+XVFB_PID=$!
 
 # Xvfb is slow so we gotta wait :)
 for i in $(seq 1 20); do
@@ -88,6 +89,7 @@ cd "$GAME_DIR"
 mkdir -p MelonLoader
 touch MelonLoader/Latest.log
 tail -F MelonLoader/Latest.log &
+TAIL_PID=$!
 
 GAME_ARGS=(
     -batchmode
@@ -102,5 +104,39 @@ GAME_ARGS=(
 )
 [ "${DEBUG:-false}" = "true" ] && GAME_ARGS+=(/debug_helper)
 
-# exec replaces the shell with wine so it receives AMP's stop signal directly instead of it being swallowed by bash
-exec wine "A Township Tale.exe" "${GAME_ARGS[@]}"
+# AMP sends its stop signal to this script, and exec'ing wine here doesn't help: wine launches the
+# game through start.exe, so the signal lands on that and the game carries on running. Signal the
+# game process itself, then tear the whole wine session down if it won't go quietly. Without this
+# the game, Xvfb and the log tail all survive a stop and the container has to be killed by hand.
+shutdown() {
+    trap - TERM INT
+    echo "Stop requested, asking the server to close"
+    pkill -TERM -f "A Township Tale.exe" 2>/dev/null || true
+
+    # give it time to save the world before resorting to anything harsher
+    for _ in $(seq 1 20); do
+        pgrep -f "A Township Tale.exe" >/dev/null 2>&1 || break
+        sleep 1
+    done
+
+    if pgrep -f "A Township Tale.exe" >/dev/null 2>&1; then
+        echo "Server is still running, terminating the wine session"
+        wineserver -k 2>/dev/null || true
+    fi
+
+    kill "$XVFB_PID" "$TAIL_PID" 2>/dev/null || true
+    wait 2>/dev/null || true
+    echo "Server stopped"
+    exit 0
+}
+trap shutdown TERM INT
+
+wine "A Township Tale.exe" "${GAME_ARGS[@]}" &
+WINE_PID=$!
+
+# the first wait gets interrupted by the trap; if the game exits on its own the second one is a no-op
+wait "$WINE_PID" 2>/dev/null || true
+wait "$WINE_PID" 2>/dev/null || true
+
+# the game exiting by itself should take the container down too, rather than leaving Xvfb holding it open
+kill "$XVFB_PID" "$TAIL_PID" 2>/dev/null || true

@@ -72,6 +72,7 @@ mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null || true
 
 # the game still needs a display to exist even with -batchmode -nographics, or wine dies as soon as it tries to create a window
 Xvfb "$DISPLAY" -screen 0 1024x768x24 &
+XVFB_PID=$!
 
 # Xvfb is slow so we gotta wait :)
 for i in $(seq 1 20); do
@@ -89,10 +90,43 @@ cd "$GAME_DIR"
 mkdir -p MelonLoader
 touch MelonLoader/Latest.log
 tail -F MelonLoader/Latest.log &
+TAIL_PID=$!
 
 # swap Wings' {{VAR}} placeholders for shell expansions, same as the yolks images do
 MODIFIED_STARTUP=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g')
 [ "${DEBUG:-false}" = "true" ] && MODIFIED_STARTUP="${MODIFIED_STARTUP} /debug_helper"
 
-# exec replaces the shell with wine so it receives the panel's stop signal directly instead of it being swallowed by bash
-eval "exec ${MODIFIED_STARTUP}"
+# exec'ing wine here doesn't get the signal where it needs to go: wine launches the game through
+# start.exe, so a stop lands on that and the game carries on running. Signal the game process
+# itself, then tear the whole wine session down if it won't go quietly.
+shutdown() {
+    trap - TERM INT
+    echo "Stop requested, asking the server to close"
+    pkill -TERM -f "A Township Tale.exe" 2>/dev/null || true
+
+    # give it time to save the world before resorting to anything harsher
+    for _ in $(seq 1 20); do
+        pgrep -f "A Township Tale.exe" >/dev/null 2>&1 || break
+        sleep 1
+    done
+
+    if pgrep -f "A Township Tale.exe" >/dev/null 2>&1; then
+        echo "Server is still running, terminating the wine session"
+        wineserver -k 2>/dev/null || true
+    fi
+
+    kill "$XVFB_PID" "$TAIL_PID" 2>/dev/null || true
+    wait 2>/dev/null || true
+    echo "Server stopped"
+    exit 0
+}
+trap shutdown TERM INT
+
+eval "${MODIFIED_STARTUP}" &
+GAME_PID=$!
+
+# the first wait gets interrupted by the trap; if the game exits on its own the second one is a no-op
+wait "$GAME_PID" 2>/dev/null || true
+wait "$GAME_PID" 2>/dev/null || true
+
+kill "$XVFB_PID" "$TAIL_PID" 2>/dev/null || true
