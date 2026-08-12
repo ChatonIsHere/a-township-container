@@ -266,15 +266,19 @@ def format_message(raw):
 
 def pump_stdin(ws):
     """Panel console input arrives on stdin, one command per line."""
+    # AMP hands us a pipe and doesn't echo what was typed, so without our echo the console
+    # shows replies with no sign of the command that produced them. Wings attaches a TTY,
+    # and a TTY echoes input by itself - echoing there would show every command twice
+    echo = not sys.stdin.isatty()
     cmd_id = 0
     for line in sys.stdin:
         cmd = line.strip()
         if not cmd:
             continue
         cmd_id += 1
-        # neither panel echoes what was typed, so without this the console shows replies with no
-        # sign of the command that produced them - print before sending so it stays in order
-        emit(f"> {cmd}")
+        if echo:
+            # printed before sending so the echo lands ahead of the reply
+            emit(f"> {cmd}")
         try:
             ws.send_text(json.dumps({"id": cmd_id, "content": cmd}))
         except OSError as exc:
