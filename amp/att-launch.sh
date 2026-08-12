@@ -88,7 +88,8 @@ cd "$GAME_DIR"
 # MelonLoader writes its logs here, so now that goes to AMP's console (and is where the ready-detection line comes from)
 mkdir -p MelonLoader
 touch MelonLoader/Latest.log
-tail -F MelonLoader/Latest.log &
+# -n 0 so a stop/start doesn't replay the tail of the previous run before MelonLoader truncates it
+tail -n 0 -F MelonLoader/Latest.log &
 TAIL_PID=$!
 
 GAME_ARGS=(
