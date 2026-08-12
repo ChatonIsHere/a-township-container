@@ -150,8 +150,74 @@ def read_token(path, deadline):
     return None
 
 
+def scalar(value):
+    """JSON's true/false read as Python's True/False otherwise, which isn't what the game said."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return "" if value is None else str(value)
+
+
+def is_table(value):
+    """A list of flat records sharing one set of keys - what the list commands return."""
+    if not isinstance(value, list) or not value:
+        return False
+    if not all(isinstance(row, dict) and row for row in value):
+        return False
+    keys = list(value[0].keys())
+    if any(list(row.keys()) != keys for row in value):
+        return False
+    return all(not isinstance(cell, (dict, list)) for row in value for cell in row.values())
+
+
+def render_table(rows):
+    """The game logs these as a table for its own console, so match that rather than dumping JSON."""
+    columns = list(rows[0].keys())
+    cells = [[scalar(row[column]) for column in columns] for row in rows]
+    widths = [max(len(column), *(len(row[i]) for row in cells)) for i, column in enumerate(columns)]
+    lines = [columns] + cells
+    return "\n".join(
+        "  ".join(cell.ljust(width) for cell, width in zip(line, widths)).rstrip() for line in lines
+    )
+
+
+def render_value(value):
+    """Render a deserialised Result by its shape - it can be anything a command chose to return."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.rstrip("\n")
+    if isinstance(value, (bool, int, float)):
+        return scalar(value)
+    if isinstance(value, list) and not value:
+        return "(none)"
+    if is_table(value):
+        return render_table(value)
+    try:
+        return json.dumps(value, indent=2)
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def render_exception(exception):
+    """A command that threw carries the failure here and leaves ResultString empty."""
+    if isinstance(exception, dict):
+        # Newtonsoft serialises exceptions through ISerializable, hence the ClassName spelling
+        described = ": ".join(
+            part
+            for part in (exception.get("ClassName"), exception.get("Message"))
+            if isinstance(part, str) and part
+        )
+        if described:
+            return described
+        try:
+            return json.dumps(exception, indent=2)
+        except (TypeError, ValueError):
+            pass
+    return str(exception)
+
+
 def format_message(raw):
-    """Mirror how the launcher renders console traffic, so output reads the same."""
+    """Render console traffic the way the launcher's console does, so output reads the same."""
     try:
         msg = json.loads(raw)
     except ValueError:
@@ -163,19 +229,23 @@ def format_message(raw):
     data = msg.get("data")
 
     if kind == "CommandResult":
-        if isinstance(data, dict):
-            result_string = str(data.get("ResultString") or "")
-            result = data.get("Result")
-            # ResultString is often a bare type name when the payload is the interesting part
-            if result_string and not result_string.startswith("System."):
-                return result_string.rstrip("\n")
-            if result not in (None, "", []):
-                try:
-                    return json.dumps(result, indent=2)
-                except (TypeError, ValueError):
-                    return str(result)
-            return result_string.rstrip("\n")
-        return "" if data is None else str(data).rstrip("\n")
+        if not isinstance(data, dict):
+            return "" if data is None else str(data).rstrip("\n")
+
+        exception = data.get("Exception")
+        if exception:
+            return f"[error] {render_exception(exception)}"
+
+        # a command returning a value answers with CommandResult<T>, whose ResultString is only
+        # Result.ToString() - a bare type name for anything that isn't already a string, which is
+        # where System.Collections.Generic.List`1[System.Object] came from. The real payload is
+        # serialised alongside it in Result, so render that instead and only fall back to
+        # ResultString for the plain CommandResult, which has no Result field at all
+        if "Result" in data:
+            rendered = render_value(data.get("Result"))
+            if rendered:
+                return rendered
+        return str(data.get("ResultString") or "").rstrip("\n")
 
     if kind == "SystemMessage":
         return f"[console] {data}"
@@ -192,6 +262,9 @@ def pump_stdin(ws):
         if not cmd:
             continue
         cmd_id += 1
+        # neither panel echoes what was typed, so without this the console shows replies with no
+        # sign of the command that produced them - print before sending so it stays in order
+        print(f"> {cmd}", flush=True)
         try:
             ws.send_text(json.dumps({"id": cmd_id, "content": cmd}))
         except OSError as exc:
