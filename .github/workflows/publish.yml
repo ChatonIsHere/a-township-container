@@ -47,14 +47,19 @@ jobs:
               uses: docker/metadata-action@v5
               with:
                   images: ${{ env.IMAGE_NAME }}
-                  # every tag is spelled out with the variant suffix baked into its value rather than
-                  # applied through flavor: flavor's suffix is silently dropped from the latest tag, so
-                  # the egg and amp legs each published a bare :latest and raced the standalone one for it
-                  # (that's how :latest ended up being the egg image). {{is_default_branch}} also resolves
-                  # true on tag pushes, which is what let the release candidates move :latest at all
+                  # the variant suffix is attached per tag entry rather than through flavor: flavor's
+                  # suffix is silently dropped from the latest tag, so the egg and amp legs each
+                  # published a bare :latest and raced the standalone leg for it (that's how :latest
+                  # ended up being the egg image). latest is also gated on an explicit ref comparison
+                  # because {{is_default_branch}} resolves true on tag pushes, which is what let the
+                  # release candidates move :latest at all. The ref-based entries keep metadata-action's
+                  # sanitisation, so a ref character that's invalid in a docker tag becomes '-' instead
+                  # of failing the push; the branch entry only fires for workflow_dispatch off a
+                  # non-main branch, since push events on other branches don't trigger this workflow
                   tags: |
                       type=raw,value=latest${{ matrix.suffix }},enable=${{ github.ref == 'refs/heads/main' }}
-                      type=raw,value=${{ github.ref_name }}${{ matrix.suffix }},enable=${{ github.ref != 'refs/heads/main' }}
+                      type=ref,event=tag,suffix=${{ matrix.suffix }}
+                      type=ref,event=branch,suffix=${{ matrix.suffix }},enable=${{ github.ref != 'refs/heads/main' }}
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
