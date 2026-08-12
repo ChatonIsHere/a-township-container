@@ -1,1 +1,14 @@
-[]
+[
+    {
+        "ConfigFile": "tavern-config/server_settings.json",
+        "AutoMap": true,
+        "Importable": true,
+        "ConfigType": "json"
+    },
+    {
+        "ConfigFile": "server-data/Servers/-1/ServerConfiguration.json",
+        "AutoMap": true,
+        "Importable": true,
+        "ConfigType": "json"
+    }
+]
