@@ -22,7 +22,7 @@
     },
     "scripts": {
         "installation": {
-            "script": "#!\/bin\/bash\r\n# The game files can't be distributed, so there is nothing to download here.\r\nmkdir -p \/mnt\/server\r\necho \"-------------------------------------------------------\"\r\necho \"No files to install - A Township Tale can no longer be\"\r\necho \"downloaded, so you provide your own backed-up game files.\"\r\necho \"\"\r\necho \"Upload the CONTENTS of your prepared game-source folder\"\r\necho \"(A Township Tale.exe and the A Township Tale_Data folder\"\r\necho \"at the top level, not nested inside another folder) into\"\r\necho \"this server's root directory, then start the server.\"\r\necho \"\"\r\necho \"The container patches the install itself on every start.\"\r\necho \"-------------------------------------------------------\"\r\nexit 0",
+            "script": "#!/bin/bash\n# The game files can't be distributed, so there is nothing to download here.\nmkdir -p /mnt/server/game-source\necho \"-------------------------------------------------------\"\necho \"No files to install - A Township Tale can no longer be\"\necho \"downloaded, so you provide your own backed-up game files.\"\necho \"\"\necho \"Upload the CONTENTS of your prepared game-source folder\"\necho \"(A Township Tale.exe and the A Township Tale_Data folder\"\necho \"directly inside, not nested inside another folder) into\"\necho \"this server's game-source directory, then start it.\"\necho \"\"\necho \"The container patches the install itself on every start.\"\necho \"-------------------------------------------------------\"\nexit 0",
             "container": "ghcr.io/pterodactyl/installers:debian",
             "entrypoint": "bash"
         }

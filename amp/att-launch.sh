@@ -3,16 +3,29 @@
 # instance datastore mounted into the container and settings handed over as environment variables
 set -e
 
-# wherever AMP put us is where the game lives; the patcher and wine prefix follow it
-GAME_DIR="$(pwd)"
+# AMP starts us in the instance's app directory; the game files get their own folder inside it so
+# they aren't tangled up with the wine prefix, mirroring the layout the compose setup mounts
+INSTANCE_DIR="$(pwd)"
+GAME_DIR="$INSTANCE_DIR/game-source"
 export GAME_DIR
-export WINEPREFIX="$GAME_DIR/.wine"
+export WINEPREFIX="$INSTANCE_DIR/.wine"
+
+# these are set in the image too, but don't rely on that surviving however the panel spawns us:
+# MelonLoader hooks the game through a proxy version.dll, and wine only loads it when told to
+# prefer the native one. Without the override the game boots vanilla, TavernLib never loads, and
+# the only symptom is an empty MelonLoader log while Unity happily starts
+export WINEARCH="${WINEARCH:-win64}"
+export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-mscoree=d;mshtml=d;version=n,b}"
+export WINEDEBUG="${WINEDEBUG:-err+all}"
+
+# create it up front so it's there to upload into, even on a start that's about to fail the check
+mkdir -p "$GAME_DIR"
 
 # the game files can't ship with the image, so check the upload actually landed in the right place
-if [ ! -f "A Township Tale.exe" ] || [ ! -d "A Township Tale_Data" ]; then
-    echo "A Township Tale.exe and/or the A Township Tale_Data folder are missing from the game directory"
-    echo "Upload the contents of your prepared game-source folder so both sit at the top level"
-    echo "(not nested inside another folder), then start the server again"
+if [ ! -f "$GAME_DIR/A Township Tale.exe" ] || [ ! -d "$GAME_DIR/A Township Tale_Data" ]; then
+    echo "A Township Tale.exe and/or the A Township Tale_Data folder are missing from game-source"
+    echo "Upload the contents of your prepared game-source folder into the game-source directory"
+    echo "so both sit directly inside it (not nested inside another folder), then start again"
     exit 1
 fi
 
@@ -47,8 +60,8 @@ jq --argjson port "${SERVER_PORT:-1757}" '.server_port = $port' "$TAVERN_SERVER_
 # manager root rather than buried six levels deep in the prefix
 SAVE_DIR="$WINEPREFIX/drive_c/users/$WINE_USER/AppData/Roaming/A Township Tale"
 mkdir -p "$SAVE_DIR"
-ln -sfn "$SAVE_DIR" "$GAME_DIR/server-data"
-ln -sfn "$TAVERN_CONFIG_DIR" "$GAME_DIR/tavern-config"
+ln -sfn "$SAVE_DIR" "$INSTANCE_DIR/server-data"
+ln -sfn "$TAVERN_CONFIG_DIR" "$INSTANCE_DIR/tavern-config"
 
 export DISPLAY=:1
 
@@ -67,6 +80,9 @@ done
 
 # i don't have a mouse in AMP's console either
 wine reg add "HKEY_CURRENT_USER\Software\Wine\WineDbg" /v ShowCrashDialog /t REG_DWORD /d 0 /f
+
+# the game has to run from the directory its own files are in
+cd "$GAME_DIR"
 
 # MelonLoader writes its logs here, so now that goes to AMP's console (and is where the ready-detection line comes from)
 mkdir -p MelonLoader

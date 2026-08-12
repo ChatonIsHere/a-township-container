@@ -13,7 +13,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     WINEDLLOVERRIDES="mscoree=d;mshtml=d;version=n,b" \
     XDG_RUNTIME_DIR=/tmp/xdg-runtime \
     # patcher.sh patches the game where Wings mounts it instead of /game-files
-    GAME_DIR=/home/container
+    # (entrypoint.sh re-exports this, it's here so the value is visible in docker inspect)
+    GAME_DIR=/home/container/game-source
 
 RUN dpkg --add-architecture i386 && \
     apt-get update && \

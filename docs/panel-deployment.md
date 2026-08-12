@@ -43,7 +43,7 @@ The install script doesn't download anything (there's nothing it legally can), i
 
 ### Uploading the game files
 
-Upload the contents of your prepared `game-source` folder into the server's root directory, so `A Township Tale.exe` and `A Township Tale_Data` sit directly at the top level next to nothing else. Uploading ~4.4GB as thousands of files over SFTP is painfully slow, so zip it first (contents, not the folder itself), upload the single zip, and use the panel file manager's `Unarchive` option on it. Delete the zip afterwards to get your space back.
+Upload the contents of your prepared `game-source` folder into the server's `game-source` directory, so `A Township Tale.exe` and `A Township Tale_Data` sit directly inside it. That folder is created for you on the first start attempt if it isn't there yet. Uploading ~4.4GB as thousands of files over SFTP is painfully slow, so zip it first (contents, not the folder itself), upload the single zip, and use the panel file manager's `Unarchive` option on it. Delete the zip afterwards to get your space back.
 
 ### First start
 
@@ -51,7 +51,8 @@ Hit start and watch the console. The first boot copies the wine prefix into plac
 
 A few things that moved compared to the compose setup:
 
-- Your world saves live inside the server directory at `.wine/drive_c/users/container/AppData/Roaming/A Township Tale`, and TavernLib's config files (`server_settings.json`, `users.json`) next door in `.../Roaming/TheModdingTavern`. Back those up, and do not delete the `.wine` folder thinking it's disposable, your saves are inside it. If your panel is configured to run containers as a uid other than the default, that `container` folder is named after the uid number instead, so check what's actually there before assuming
+- The server directory holds `game-source` (the game files you uploaded), `.wine` (the prefix), and two shortcuts: `server-data` and `tavern-config`, named after the folders the compose setup mounts. Those two are symlinks, created on every start, pointing at your world saves and at TavernLib's config (`server_settings.json`, `users.json`) inside the prefix. They're there so you don't have to dig, the real locations are `.wine/drive_c/users/container/AppData/Roaming/A Township Tale` and `.../Roaming/TheModdingTavern`
+- Back both of those up, and do not delete the `.wine` folder thinking it's disposable, your saves are inside it. If your panel is configured to run containers as a uid other than the default, that `container` folder is named after the uid number instead, so check what's actually there before assuming
 - `tavern_server.json`'s `server_port` is kept in sync with your primary allocation automatically
 - To force a full re-patch, delete `.att-patch-meta.json` from the server's root directory and restart. To skip patching entirely, set the `Auto patch` variable to `false`
 
@@ -88,12 +89,14 @@ If you'd rather pull them in as a configuration repository (`Configuration` → 
 
 1. Create a new instance and pick `A Township Tale` as the application. It requires Docker, since the server runs inside `ghcr.io/chatonishere/a-township-container:latest-amp` which carries the wine setup and patcher
 2. Port defaults match the other setups: `1757` game, `1760` rcon, `1761` forest, and `1762` authentication (fixed, TavernLib hardcodes it)
-3. Upload the contents of your prepared `game-source` folder into the instance's `atownshiptale` directory via AMP's file manager or SFTP, so `A Township Tale.exe` and `A Township Tale_Data` sit directly inside it. Zip it first and unzip it there, uploading ~4.4GB as individual files is miserable
+3. Upload the contents of your prepared `game-source` folder into the instance's `game-source` directory via AMP's file manager or SFTP, so `A Township Tale.exe` and `A Township Tale_Data` sit directly inside it. That folder is created for you on the first start attempt if it isn't there yet. Zip it first and unzip it there, uploading ~4.4GB as individual files is miserable
 4. Start the instance. The first start copies the wine prefix into place and downloads the mods and patch, so it needs outbound internet and a little patience. AMP marks the instance as running once TavernLib's `Starting auth listening cycle` line appears in the console
 
 The `Auto patch` and `Debug helper` settings and the three token fields in AMP's configuration UI map to the same `AUTO_PATCH`, `DEBUG`, and `ATT_*_TOKEN` values the compose setup uses. Leave the tokens empty to use the offline server tokens.
 
-Same warning as the egg setup: the wine prefix lives at `atownshiptale/.wine` inside the instance, and your world saves live *inside it*, under `drive_c/users/<user>/AppData/Roaming/A Township Tale` (with TavernLib's config next door in `.../Roaming/TheModdingTavern`). Those are the folders to back up, and the `.wine` folder is not disposable.
+The instance's app directory holds `game-source` (the game files), `.wine` (the prefix), and `server-data` and `tavern-config` shortcuts pointing at your saves and TavernLib's config inside the prefix, named after the folders the compose setup mounts. Those two are symlinks recreated on every start, so deleting one costs nothing.
+
+Same warning as the egg setup: your world saves live *inside* `.wine`, under `drive_c/users/<user>/AppData/Roaming/A Township Tale` (with TavernLib's config next door in `.../Roaming/TheModdingTavern`). Those are the folders to back up, and the `.wine` folder is not disposable.
 
 ## Building the panel images yourself
 
@@ -109,7 +112,7 @@ Pushing to `main` builds and publishes all three images automatically, with vers
 ## Troubleshooting
 
 **The console says `A Township Tale.exe and/or the A Township Tale_Data folder are missing`.**
-The game files aren't at the top level of the server directory, which is almost always the nested-folder problem: you zipped the `game-source` folder itself instead of its contents. The file manager needs to show `A Township Tale.exe` and `A Township Tale_Data` directly, not another folder containing them.
+The game files aren't directly inside the `game-source` directory, which is almost always the nested-folder problem: you zipped the `game-source` folder itself instead of its contents, so you've ended up with `game-source/game-source/A Township Tale.exe`. Opening `game-source` in the file manager needs to show `A Township Tale.exe` and `A Township Tale_Data` themselves, not another folder containing them.
 
 **A `PATCHER:` error about GitHub being unreachable.**
 The first start has to download the patch and mods from GitHub, so the node running the container needs outbound internet access at that point. Once everything is installed, later starts work offline, the update check just gets skipped.

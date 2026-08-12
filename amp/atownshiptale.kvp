@@ -38,6 +38,7 @@ App.WindowsCommandLineArgs=
 App.CommandLineArgs=
 App.UseLinuxIOREDIR=False
 App.AppSettings={}
+App.UpdateSources=[]
 App.EnvironmentVariables={"SERVER_PORT":"{{$ServerPort}}","AUTO_PATCH":"{{AutoPatch}}","DEBUG":"{{DebugHelper}}","ATT_ACCESS_TOKEN":"{{AccessToken}}","ATT_REFRESH_TOKEN":"{{RefreshToken}}","ATT_IDENTITY_TOKEN":"{{IdentityToken}}"}
 App.CommandLineParameterFormat={0} "{1}"
 App.CommandLineParameterDelimiter=
