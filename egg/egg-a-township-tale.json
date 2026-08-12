@@ -1,0 +1,82 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PANEL",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-08-12T00:00:00+00:00",
+    "name": "A Township Tale",
+    "author": "ethan@ehsawyer.uk",
+    "description": "A Township Tale server using The Modding Tavern's server implementation. The game files cannot be distributed with this egg - upload the contents of your prepared game-source folder (A Township Tale.exe and the A Township Tale_Data folder at the top level) into the server's root directory before first start. Alongside the primary allocation (default 1757), the server needs allocations on ports 1760 (rcon), 1761 (forest), and 1762 (authentication - this one is fixed in TavernLib and cannot be moved).",
+    "features": [],
+    "docker_images": {
+        "A Township Tale": "ghcr.io/chatonishere/a-township-container:latest-egg"
+    },
+    "file_denylist": [],
+    "startup": "wine \"A Township Tale.exe\" -batchmode -nographics /start_server -1 false {{SERVER_PORT}} /force_offline /fly --melonloader.hideconsole /access_token {{ATT_ACCESS_TOKEN}} /refresh_token {{ATT_REFRESH_TOKEN}} /identity_token {{ATT_IDENTITY_TOKEN}}",
+    "config": {
+        "files": "{}",
+        "startup": "{\r\n    \"done\": \"Starting auth listening cycle\"\r\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\r\n# The game files can't be distributed, so there is nothing to download here.\r\nmkdir -p \/mnt\/server\r\necho \"-------------------------------------------------------\"\r\necho \"No files to install - A Township Tale can no longer be\"\r\necho \"downloaded, so you provide your own backed-up game files.\"\r\necho \"\"\r\necho \"Upload the CONTENTS of your prepared game-source folder\"\r\necho \"(A Township Tale.exe and the A Township Tale_Data folder\"\r\necho \"at the top level, not nested inside another folder) into\"\r\necho \"this server's root directory, then start the server.\"\r\necho \"\"\r\necho \"The container patches the install itself on every start.\"\r\necho \"-------------------------------------------------------\"\r\nexit 0",
+            "container": "ghcr.io/pterodactyl/installers:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Auto patch",
+            "description": "Check for and install the latest MelonLoader, TavernLib, and TavernDefaults core patch on every start (exactly what TavernLauncher does on Windows). Set to false to launch without any patching or update checks.",
+            "env_variable": "AUTO_PATCH",
+            "default_value": "true",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Debug helper",
+            "description": "Launch the server with /debug_helper for extra debugging output.",
+            "env_variable": "DEBUG",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "ATT access token",
+            "description": "Access token passed to the server. The default is the offline server token, which is what you want unless you know otherwise.",
+            "env_variable": "ATT_ACCESS_TOKEN",
+            "default_value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwiVXNlcm5hbWUiOiJTZXJ2ZXIiLCJyb2xlIjoiQWNjZXNzIiwiaXNfdmVyaWZpZWQiOiJUcnVlIiwiaXNfbWVtYmVyIjoiVHJ1ZSIsIlBvbGljeSI6WyJvZmZsaW5lIiwicGxheV9vZmZsaW5lIiwic2VydmVyX2FjY2Vzc19wcmVfYWxwaGEiLCJnYW1lX2FjY2Vzc19wdWJsaWMiLCJzZXJ2ZXJfb3duZXIiLCJkZWJ1Z19mZWF0dXJlcyIsImRhdGFiYXNlX2FkbWluIiwicmV1c2VfcmVmcmVzaF90b2tlbnMiXSwiZXhwIjo5OTk5OTk5OTk5LCJpc3MiOiJBbHRhV2ViQVBJIiwiYXVkIjoiQWx0YUNsaWVudCJ9.wLKduc-OVFM0jgi_aeHwzazy70AO8KXyT5-YVkpPm4g",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
+        },
+        {
+            "name": "ATT refresh token",
+            "description": "Refresh token passed to the server. The default is the offline server token, which is what you want unless you know otherwise.",
+            "env_variable": "ATT_REFRESH_TOKEN",
+            "default_value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwicm9sZSI6IlJlZnJlc2giLCJleHAiOjk5OTk5OTk5OTksImlzcyI6IkFsdGFXZWJBUEkiLCJhdWQiOiJBbHRhQ2xpZW50In0.nN1uSeWMrpK3qT-vySb6ynkvm4Eq23lHgD1xIKOCaxc",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
+        },
+        {
+            "name": "ATT identity token",
+            "description": "Identity token passed to the server. The default is the offline server token, which is what you want unless you know otherwise.",
+            "env_variable": "ATT_IDENTITY_TOKEN",
+            "default_value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwiVXNlcm5hbWUiOiJTZXJ2ZXIiLCJyb2xlIjoiSWRlbnRpdHkiLCJpc19tZW1iZXIiOiJUcnVlIiwiaXNfZGV2IjoiVHJ1ZSIsImV4cCI6OTk5OTk5OTk5OSwiaXNzIjoiQWx0YVdlYkFQSSIsImF1ZCI6IkFsdGFDbGllbnQifQ.DL8u_uiiZbKAwBCNoiwlEz2ba6J5Z0WoAPpq4JPQ9tg",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string",
+            "field_type": "text"
+        }
+    ]
+}

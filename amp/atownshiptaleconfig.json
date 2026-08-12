@@ -1,0 +1,68 @@
+[
+    {
+        "DisplayName": "Auto patch",
+        "Category": "A Township Tale",
+        "Description": "Check for and install the latest MelonLoader, TavernLib, and TavernDefaults core patch on every start (exactly what TavernLauncher does on Windows). Disable to launch without any patching or update checks.",
+        "Keywords": "patch,update,melonloader,tavernlib",
+        "FieldName": "AutoPatch",
+        "InputType": "enum",
+        "ParamFieldName": "AutoPatch",
+        "IncludeInCommandLine": false,
+        "DefaultValue": "true",
+        "EnumValues": {
+            "true": "Enabled",
+            "false": "Disabled"
+        }
+    },
+    {
+        "DisplayName": "Debug helper",
+        "Category": "A Township Tale",
+        "Description": "Launch the server with /debug_helper for extra debugging output.",
+        "Keywords": "debug",
+        "FieldName": "DebugHelper",
+        "InputType": "enum",
+        "ParamFieldName": "DebugHelper",
+        "IncludeInCommandLine": false,
+        "DefaultValue": "false",
+        "EnumValues": {
+            "true": "Enabled",
+            "false": "Disabled"
+        }
+    },
+    {
+        "DisplayName": "ATT access token",
+        "Category": "A Township Tale",
+        "Description": "Access token passed to the server. Leave empty to use the offline server token, which is what you want unless you know otherwise.",
+        "Keywords": "token,access",
+        "FieldName": "AccessToken",
+        "InputType": "password",
+        "ParamFieldName": "AccessToken",
+        "IncludeInCommandLine": false,
+        "DefaultValue": "",
+        "EnumValues": {}
+    },
+    {
+        "DisplayName": "ATT refresh token",
+        "Category": "A Township Tale",
+        "Description": "Refresh token passed to the server. Leave empty to use the offline server token, which is what you want unless you know otherwise.",
+        "Keywords": "token,refresh",
+        "FieldName": "RefreshToken",
+        "InputType": "password",
+        "ParamFieldName": "RefreshToken",
+        "IncludeInCommandLine": false,
+        "DefaultValue": "",
+        "EnumValues": {}
+    },
+    {
+        "DisplayName": "ATT identity token",
+        "Category": "A Township Tale",
+        "Description": "Identity token passed to the server. Leave empty to use the offline server token, which is what you want unless you know otherwise.",
+        "Keywords": "token,identity",
+        "FieldName": "IdentityToken",
+        "InputType": "password",
+        "ParamFieldName": "IdentityToken",
+        "IncludeInCommandLine": false,
+        "DefaultValue": "",
+        "EnumValues": {}
+    }
+]
