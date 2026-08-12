@@ -33,4 +33,6 @@ RUN export WINEPREFIX=/opt/wine-template && wineboot --init && wineserver --wait
 
 COPY patcher.sh /patcher.sh
 COPY amp/att-launch.sh /att-launch.sh
-RUN chmod +x /patcher.sh /att-launch.sh
+# bridges TavernLib's websocket console onto stdin/stdout, stdlib only so there's nothing to pip install
+COPY console-bridge.py /console-bridge.py
+RUN chmod +x /patcher.sh /att-launch.sh /console-bridge.py
