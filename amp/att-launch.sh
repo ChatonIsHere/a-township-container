@@ -92,6 +92,17 @@ touch MelonLoader/Latest.log
 tail -n 0 -F MelonLoader/Latest.log &
 TAIL_PID=$!
 
+# TavernLib closes the game's own remote console and serves its own over a websocket on the RCON
+# port, so bridge that onto stdin/stdout: typed commands from AMP's console go in, console output
+# comes out alongside the MelonLoader log. TavernLib writes the token itself for a headless server.
+export TAVERN_CONSOLE_TOKEN_FILE="$TAVERN_CONFIG_DIR/console_token.txt"
+export RCON_PORT="${RCON_PORT:-1760}"
+# a background command in a non-interactive shell gets /dev/null on stdin, which would leave the
+# bridge reading EOF and no typed command ever reaching the game, so hand it the real one
+exec 3<&0
+python3 /console-bridge.py <&3 &
+CONSOLE_PID=$!
+
 GAME_ARGS=(
     -batchmode
     -nographics
@@ -125,14 +136,15 @@ shutdown() {
         wineserver -k 2>/dev/null || true
     fi
 
-    kill "$XVFB_PID" "$TAIL_PID" 2>/dev/null || true
+    kill "$XVFB_PID" "$TAIL_PID" "$CONSOLE_PID" 2>/dev/null || true
     wait 2>/dev/null || true
     echo "Server stopped"
     exit 0
 }
 trap shutdown TERM INT
 
-wine "A Township Tale.exe" "${GAME_ARGS[@]}" &
+# stdin belongs to the console bridge, so keep the game off it rather than have them compete
+wine "A Township Tale.exe" "${GAME_ARGS[@]}" < /dev/null &
 WINE_PID=$!
 
 # the first wait gets interrupted by the trap; if the game exits on its own the second one is a no-op
@@ -140,4 +152,4 @@ wait "$WINE_PID" 2>/dev/null || true
 wait "$WINE_PID" 2>/dev/null || true
 
 # the game exiting by itself should take the container down too, rather than leaving Xvfb holding it open
-kill "$XVFB_PID" "$TAIL_PID" 2>/dev/null || true
+kill "$XVFB_PID" "$TAIL_PID" "$CONSOLE_PID" 2>/dev/null || true

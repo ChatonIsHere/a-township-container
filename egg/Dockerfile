@@ -20,7 +20,9 @@ RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         wget curl jq gnupg2 ca-certificates xvfb \
-        cabextract unzip p7zip-full winetricks xdg-user-dirs dbus-x11 && \
+        cabextract unzip p7zip-full winetricks xdg-user-dirs dbus-x11 \
+        # for the websocket console bridge; the AMP base image already ships python3
+        python3-minimal && \
     mkdir -pm755 /etc/apt/keyrings && \
     wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
     wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources && \
@@ -56,7 +58,9 @@ RUN export WINEPREFIX=/opt/wine-template && wineboot --init && wineserver --wait
 USER root
 COPY egg/entrypoint.sh /entrypoint.sh
 COPY patcher.sh /patcher.sh
-RUN chmod +x /entrypoint.sh /patcher.sh
+# bridges TavernLib's websocket console onto stdin/stdout, stdlib only so there's nothing to pip install
+COPY console-bridge.py /console-bridge.py
+RUN chmod +x /entrypoint.sh /patcher.sh /console-bridge.py
 
 USER container
 WORKDIR /home/container

@@ -37,16 +37,21 @@ App.LinuxCommandLineArgs=
 App.WindowsCommandLineArgs=
 App.CommandLineArgs=
 App.UseLinuxIOREDIR=False
+# the game is a grandchild of this script (wine launches it through start.exe), so watching only the
+# direct child measures the launch script sitting idle and reports next to no CPU or memory
+App.MonitorDirectChildOnly=False
+App.DumpFullChildProcessTree=False
+App.MonitorChildProcessName=
 App.AppSettings={}
 App.UpdateSources=[]
-App.EnvironmentVariables={"SERVER_PORT":"{{$ServerPort}}","AUTO_PATCH":"{{AutoPatch}}","DEBUG":"{{DebugHelper}}","ATT_ACCESS_TOKEN":"{{AccessToken}}","ATT_REFRESH_TOKEN":"{{RefreshToken}}","ATT_IDENTITY_TOKEN":"{{IdentityToken}}"}
+App.EnvironmentVariables={"SERVER_PORT":"{{$ServerPort}}","AUTO_PATCH":"{{AutoPatch}}","DEBUG":"{{DebugHelper}}","RCON_PORT":"{{$RconPort}}","ATT_ACCESS_TOKEN":"{{AccessToken}}","ATT_REFRESH_TOKEN":"{{RefreshToken}}","ATT_IDENTITY_TOKEN":"{{IdentityToken}}"}
 App.CommandLineParameterFormat={0} "{1}"
 App.CommandLineParameterDelimiter=
 App.ExitMethod=OS_CLOSE
 App.ExitTimeout=60
 App.ExitString=
 App.ExitFile=
-App.HasWriteableConsole=False
+App.HasWriteableConsole=True
 App.HasReadableConsole=True
 App.SupportsLiveSettingsChanges=False
 App.ApplicationIPBinding=0.0.0.0
