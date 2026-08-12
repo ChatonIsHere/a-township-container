@@ -65,5 +65,6 @@ Console.UserChatRegex=
 Console.UpdateAvailableRegex=
 Console.SuppressLogAtStart=False
 Console.ActivateLogRegex=
+Limits.AutoRetryCount=0
 Limits.SleepMode=False
 Limits.SleepOnStart=False
