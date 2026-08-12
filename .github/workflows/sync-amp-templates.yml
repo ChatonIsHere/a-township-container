@@ -11,6 +11,7 @@ on:
             - 'amp/atownshiptaleconfig.json'
             - 'amp/atownshiptalemetaconfig.json'
             - 'amp/manifest.json'
+            - 'amp/att.jpg'
     workflow_dispatch:
 
 jobs:
@@ -31,8 +32,10 @@ jobs:
                   git config user.email "github-actions[bot]@users.noreply.github.com"
 
                   STAGE=$(mktemp -d)
+                  # att.jpg is the repository icon manifest.json points at, and the app banner the
+                  # template links to, so it has to sit at the branch root alongside the templates
                   cp amp/atownshiptale.kvp amp/atownshiptaleconfig.json \
-                     amp/atownshiptalemetaconfig.json amp/manifest.json "$STAGE/"
+                     amp/atownshiptalemetaconfig.json amp/manifest.json amp/att.jpg "$STAGE/"
 
                   git fetch origin amp-templates
                   git worktree add branch origin/amp-templates

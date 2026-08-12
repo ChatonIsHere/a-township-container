@@ -21,8 +21,9 @@ RUN dpkg --add-architecture i386 && \
     apt-get install -y --no-install-recommends \
         wget curl jq gnupg2 ca-certificates xvfb \
         cabextract unzip p7zip-full winetricks xdg-user-dirs dbus-x11 \
-        # for the websocket console bridge; the AMP base image already ships python3
-        python3-minimal && \
+        # for the websocket console bridge; the AMP base image already ships python3.
+        # python3-minimal is not enough, it omits stdlib modules the bridge needs (json included)
+        python3 && \
     mkdir -pm755 /etc/apt/keyrings && \
     wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
     wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources && \
