@@ -15,6 +15,18 @@ jobs:
         permissions:
             contents: read
             packages: write
+        strategy:
+            matrix:
+                include:
+                    # standalone image, tagged exactly as before so existing users are unaffected
+                    - dockerfile: Dockerfile
+                      suffix: ''
+                    # Pterodactyl/Pelican/Calagopus image
+                    - dockerfile: egg/Dockerfile
+                      suffix: '-egg'
+                    # CubeCoders AMP image
+                    - dockerfile: amp/Dockerfile
+                      suffix: '-amp'
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -31,6 +43,9 @@ jobs:
               uses: docker/metadata-action@v5
               with:
                   images: ${{ env.IMAGE_NAME }}
+                  # the suffix distinguishes the variants: latest / latest-egg / latest-amp (and the same for version tags)
+                  flavor: |
+                      suffix=${{ matrix.suffix }}
                   tags: |
                       type=raw,value=latest,enable={{is_default_branch}}
                       type=ref,event=tag
@@ -42,8 +57,10 @@ jobs:
               uses: docker/build-push-action@v6
               with:
                   context: .
+                  file: ${{ matrix.dockerfile }}
                   push: true
                   tags: ${{ steps.meta.outputs.tags }}
                   labels: ${{ steps.meta.outputs.labels }}
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
+                  # each variant gets its own cache scope so the matrix legs don't overwrite each other
+                  cache-from: type=gha,scope=build${{ matrix.suffix }}
+                  cache-to: type=gha,mode=max,scope=build${{ matrix.suffix }}

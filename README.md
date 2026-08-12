@@ -68,6 +68,10 @@ Two AppData paths within wine are mapped to their own folders, so they're persis
 
 Setting this up on a rented VPS? There's a full beginner walkthrough in [docs/vps-setup.md](docs/vps-setup.md) covering renting the box, securing it, and getting the container running.
 
+## Running under a game panel
+
+Alongside the standard image above (which is unchanged, keep using it exactly as before), two extra flavours get published for hosting panels: `latest-egg` for Pterodactyl, Pelican, and Calagopus (one egg covers all three, it's in the [egg](egg/) folder) and `latest-amp` for CubeCoders AMP (template in the [amp](amp/) folder). You still provide your own game files either way, and the container checks they're in the right place before starting. Setup for all four panels is covered in [docs/panel-deployment.md](docs/panel-deployment.md).
+
 ## Building your own image
 
 Clone this repo and run `docker compose up -d --build` instead of pulling the published image. Pushing to `main` rebuilds and republishes the `latest` tag automatically via GitHub Actions. Pushing a version tag (format `YY.MM.PATCH-TAVERNLAUNCHERVERSION`, e.g. `26.7.1-1.0.0`) publishes that as its own tag instead.

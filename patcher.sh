@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-GAME_DIR="/game-files"
+# the panel images run the game from a different directory, standalone keeps the /game-files default
+GAME_DIR="${GAME_DIR:-/game-files}"
 META="$GAME_DIR/.att-patch-meta.json"
 MANAGED_DIR="$GAME_DIR/A Township Tale_Data/Managed"
 FORCE="${1:-}"
