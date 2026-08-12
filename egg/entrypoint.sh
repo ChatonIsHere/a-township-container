@@ -5,11 +5,27 @@ set -e
 
 cd /home/container
 
+# the game files get their own folder rather than sitting loose in the server root, so they aren't
+# tangled up with the wine prefix, mirroring the layout the compose setup mounts
+export GAME_DIR=/home/container/game-source
+
+# these are set in the image too, but don't rely on that surviving however the panel spawns us:
+# MelonLoader hooks the game through a proxy version.dll, and wine only loads it when told to
+# prefer the native one. Without the override the game boots vanilla, TavernLib never loads, and
+# the only symptom is an empty MelonLoader log while Unity happily starts
+export WINEARCH="${WINEARCH:-win64}"
+export WINEPREFIX="${WINEPREFIX:-/home/container/.wine}"
+export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-mscoree=d;mshtml=d;version=n,b}"
+export WINEDEBUG="${WINEDEBUG:-err+all}"
+
+# create it up front so it's there to upload into, even on a start that's about to fail the check
+mkdir -p "$GAME_DIR"
+
 # the game files can't ship with the image, so check the upload actually landed in the right place
-if [ ! -f "A Township Tale.exe" ] || [ ! -d "A Township Tale_Data" ]; then
-    echo "A Township Tale.exe and/or the A Township Tale_Data folder are missing from the server files"
-    echo "Upload the contents of your prepared game-source folder so both sit at the top level"
-    echo "(not nested inside another folder), then start the server again"
+if [ ! -f "$GAME_DIR/A Township Tale.exe" ] || [ ! -d "$GAME_DIR/A Township Tale_Data" ]; then
+    echo "A Township Tale.exe and/or the A Township Tale_Data folder are missing from game-source"
+    echo "Upload the contents of your prepared game-source folder into the game-source directory"
+    echo "so both sit directly inside it (not nested inside another folder), then start again"
     exit 1
 fi
 
@@ -65,6 +81,9 @@ done
 
 # i don't have a mouse in a panel console either
 wine reg add "HKEY_CURRENT_USER\Software\Wine\WineDbg" /v ShowCrashDialog /t REG_DWORD /d 0 /f
+
+# the game has to run from the directory its own files are in
+cd "$GAME_DIR"
 
 # MelonLoader writes its logs here, so now that goes to the panel console (and is where the ready-detection line comes from)
 mkdir -p MelonLoader
