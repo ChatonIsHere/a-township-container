@@ -59,6 +59,8 @@ A few things that moved compared to the compose setup:
 
 Heads up before you invest time here: the AMP template is the newest and least battle-tested part of this repo. The image builds and the launch script is the same logic as the other variants, but AMP's Generic Module has a lot of knobs and I haven't been able to iterate against every AMP version. If something doesn't line up, please open an issue with your AMP version and what the console said.
 
+**AMP has to be installed on the host, not run inside a container.** The server runs inside this repo's image, so AMP needs to be able to create Docker containers, and an AMP that is itself containerised can't do that. On an AMP-in-Docker setup this application simply won't appear in the instance creation list, with no error to explain why. Use the standalone Compose setup on those hosts.
+
 AMP uses a Generic Module template instead of an egg, which is the files in the [`amp`](../amp/) folder:
 
 - `atownshiptale.kvp` - the template itself
@@ -114,6 +116,8 @@ The first start has to download the patch and mods from GitHub, so the node runn
 The panels watch for TavernLib's `Starting auth listening cycle` console line. If the game is genuinely up (players can connect) but the panel disagrees, TavernLib's logging likely changed, so please open an issue and mention the last few console lines.
 
 **AMP doesn't list `A Township Tale` when creating an instance.**
+First check whether AMP itself is running inside a container, `docker ps` failing from an AMP shell whose hostname looks like a container ID is the giveaway. A containerised AMP can't create Docker instances, it has no daemon to create them with, so AMP hides every application whose template requires one. This template does require one, the wine setup and patcher live in the image, so there's nothing to toggle: AMP has to be installed on the host for this application to appear. If you can't move AMP off Docker, run the server with the standalone Compose setup instead.
+
 Templates are only read when ADS starts, so restart the ADS instance after copying the files in. Check they landed in `ADS01/Plugins/ADSModule/GenericTemplates/` (your ADS instance may be called `Main`), that all three files are there, and that the filenames are still fully lower-case. If you went the configuration repository route instead, the files and `manifest.json` need to be at the root of that repository, not in a subfolder.
 
 **The instance creates, but some of the settings are missing from the configuration UI.**
