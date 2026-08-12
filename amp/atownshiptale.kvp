@@ -37,11 +37,14 @@ App.LinuxCommandLineArgs=
 App.WindowsCommandLineArgs=
 App.CommandLineArgs=
 App.UseLinuxIOREDIR=False
-# the game is a grandchild of this script (wine launches it through start.exe), so watching only the
-# direct child measures the launch script sitting idle and reports next to no CPU or memory
+# wine launches the game through start.exe and the game reparents out of this script's process
+# tree entirely (the same reason att-launch.sh has to stop it by name), so neither the direct
+# child nor the child tree ever contains it - AMP reads ~0 CPU/memory either way. Find the game
+# by matching its command line instead, the way the stock wine/proton templates do. The pattern
+# matches the bare exe name because the launch script invokes it with a relative path
 App.MonitorDirectChildOnly=False
 App.DumpFullChildProcessTree=False
-App.MonitorChildProcessName=
+App.MonitorChildProcessName=^.*A Township Tale\.exe.*$
 App.AppSettings={}
 App.UpdateSources=[]
 App.EnvironmentVariables={"SERVER_PORT":"{{$ServerPort}}","AUTO_PATCH":"{{AutoPatch}}","DEBUG":"{{DebugHelper}}","RCON_PORT":"{{$RconPort}}","ATT_ACCESS_TOKEN":"{{AccessToken}}","ATT_REFRESH_TOKEN":"{{RefreshToken}}","ATT_IDENTITY_TOKEN":"{{IdentityToken}}"}
