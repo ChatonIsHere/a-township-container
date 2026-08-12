@@ -40,6 +40,14 @@ TAVERN_SERVER_JSON="$TAVERN_CONFIG_DIR/tavern_server.json"
 tmp=$(mktemp)
 jq --argjson port "${SERVER_PORT:-1757}" '.server_port = $port' "$TAVERN_SERVER_JSON" > "$tmp" && mv "$tmp" "$TAVERN_SERVER_JSON"
 
+# the compose setup exposes the saves and the TavernLib config as their own mounts, which a panel
+# can't do - link them to the top of the server directory instead so they're one click from the file
+# manager root rather than buried six levels deep in the prefix
+SAVE_DIR="$WINEPREFIX/drive_c/users/$WINE_USER/AppData/Roaming/A Township Tale"
+mkdir -p "$SAVE_DIR"
+ln -sfn "$SAVE_DIR" /home/container/server-data
+ln -sfn "$TAVERN_CONFIG_DIR" /home/container/tavern-config
+
 export DISPLAY=:1
 
 # both of these are created in the image already, so don't let a permission quirk kill the start

@@ -1,0 +1,50 @@
+name: Sync AMP template branch
+
+# AMP pulls its configuration repositories from the root of a branch, so the template files can't
+# live in amp/ where the rest of the repo keeps them. This copies them onto the amp-templates
+# branch whenever they change on main, so nobody has to remember to update two places.
+on:
+    push:
+        branches: [main]
+        paths:
+            - 'amp/atownshiptale.kvp'
+            - 'amp/atownshiptaleconfig.json'
+            - 'amp/atownshiptalemetaconfig.json'
+            - 'amp/manifest.json'
+    workflow_dispatch:
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Copy the template files onto amp-templates
+              run: |
+                  set -e
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  STAGE=$(mktemp -d)
+                  cp amp/atownshiptale.kvp amp/atownshiptaleconfig.json \
+                     amp/atownshiptalemetaconfig.json amp/manifest.json "$STAGE/"
+
+                  git fetch origin amp-templates
+                  git worktree add branch origin/amp-templates
+                  cd branch
+                  git checkout -B amp-templates
+                  cp "$STAGE"/. . -r
+                  git add -A
+
+                  if git diff --cached --quiet; then
+                      echo "Template files already match main, nothing to sync"
+                      exit 0
+                  fi
+
+                  git commit -m "Sync AMP template from ${GITHUB_SHA::7}"
+                  git push origin amp-templates
