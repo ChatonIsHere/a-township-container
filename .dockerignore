@@ -4,3 +4,7 @@
 game-source/
 server-data/
 tavern-config/
+# the panel image builds these itself inside the container
+panel/node_modules/
+panel/dist/
+panel/dist-server/
