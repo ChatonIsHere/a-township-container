@@ -13,7 +13,7 @@
         "A Township Tale": "ghcr.io/chatonishere/a-township-container:latest-egg"
     },
     "file_denylist": [],
-    "startup": "wine \"A Township Tale.exe\" -batchmode -nographics /start_server -1 false {{SERVER_PORT}} /force_offline /fly --melonloader.hideconsole /access_token {{ATT_ACCESS_TOKEN}} /refresh_token {{ATT_REFRESH_TOKEN}} /identity_token {{ATT_IDENTITY_TOKEN}}",
+    "startup": "wine \"A Township Tale.exe\" -batchmode -nographics /start_server -1 false {{SERVER_PORT}} /force_offline /fly /modlist modslist.json --melonloader.hideconsole /access_token {{ATT_ACCESS_TOKEN}} /refresh_token {{ATT_REFRESH_TOKEN}} /identity_token {{ATT_IDENTITY_TOKEN}}",
     "config": {
         "files": "{}",
         "startup": "{\r\n    \"done\": \"Starting auth listening cycle\"\r\n}",

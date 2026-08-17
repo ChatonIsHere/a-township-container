@@ -93,6 +93,10 @@ TAVERN_SERVER_JSON="$TAVERN_CONFIG_DIR/tavern_server.json"
 tmp=$(mktemp)
 jq --argjson port "${SERVER_PORT:-1757}" '.server_port = $port' "$TAVERN_SERVER_JSON" > "$tmp" && mv "$tmp" "$TAVERN_SERVER_JSON"
 
+# desired mod set for TavernLib's boot-time reconciler; empty means "manage nothing"
+MODSLIST_JSON="$TAVERN_CONFIG_DIR/modslist.json"
+[ -f "$MODSLIST_JSON" ] || echo '{"schema":1,"repos":[],"mods":[]}' > "$MODSLIST_JSON"
+
 export DISPLAY=:1
 
 # both of these are created in the image already, so don't let a permission quirk kill the start
@@ -139,6 +143,8 @@ GAME_ARGS=(
     /start_server -1 false "${SERVER_PORT:-1757}"
     /force_offline
     /fly
+    # relative paths resolve against the TheModdingTavern config dir
+    /modlist modslist.json
     --melonloader.hideconsole
     /access_token "${ATT_ACCESS_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwiVXNlcm5hbWUiOiJTZXJ2ZXIiLCJyb2xlIjoiQWNjZXNzIiwiaXNfdmVyaWZpZWQiOiJUcnVlIiwiaXNfbWVtYmVyIjoiVHJ1ZSIsIlBvbGljeSI6WyJvZmZsaW5lIiwicGxheV9vZmZsaW5lIiwic2VydmVyX2FjY2Vzc19wcmVfYWxwaGEiLCJnYW1lX2FjY2Vzc19wdWJsaWMiLCJzZXJ2ZXJfb3duZXIiLCJkZWJ1Z19mZWF0dXJlcyIsImRhdGFiYXNlX2FkbWluIiwicmV1c2VfcmVmcmVzaF90b2tlbnMiXSwiZXhwIjo5OTk5OTk5OTk5LCJpc3MiOiJBbHRhV2ViQVBJIiwiYXVkIjoiQWx0YUNsaWVudCJ9.wLKduc-OVFM0jgi_aeHwzazy70AO8KXyT5-YVkpPm4g}"
     /refresh_token "${ATT_REFRESH_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwicm9sZSI6IlJlZnJlc2giLCJleHAiOjk5OTk5OTk5OTksImlzcyI6IkFsdGFXZWJBUEkiLCJhdWQiOiJBbHRhQ2xpZW50In0.nN1uSeWMrpK3qT-vySb6ynkvm4Eq23lHgD1xIKOCaxc}"

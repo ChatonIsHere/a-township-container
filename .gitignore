@@ -2,3 +2,6 @@
 game-source/
 server-data/
 tavern-config/
+panel/node_modules/
+panel/dist/
+panel/dist-server/

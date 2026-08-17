@@ -68,6 +68,16 @@ Two AppData paths within wine are mapped to their own folders, so they're persis
 
 Setting this up on a rented VPS? There's a full beginner walkthrough in [docs/vps-setup.md](docs/vps-setup.md) covering renting the box, securing it, and getting the container running.
 
+## Optional web panel
+
+There's an optional web admin panel (a browser version of TavernLauncher's server administration: console, players, whitelist, settings, and the community mod manager). It's off by default; if you're using the compose file from this repo, set `PANEL_PASSWORD` in `.env` and start with:
+
+```
+docker compose --profile panel up -d
+```
+
+If you copied the compose example above, add the `tavern-panel` service from [docker-compose.yml](docker-compose.yml) first (using `image: ghcr.io/chatonishere/a-township-container:latest-panel` instead of `build`). Details, security notes, and how mod management works are in [docs/tavern-panel.md](docs/tavern-panel.md).
+
 ## Running under a game panel
 
 Alongside the standard image above (which is unchanged, keep using it exactly as before), two extra flavours get published for hosting panels: `latest-egg` for Pterodactyl, Pelican, and Calagopus (one egg covers all three, it's in the [egg](egg/) folder) and `latest-amp` for CubeCoders AMP (template in the [amp](amp/) folder). You still provide your own game files either way, and the container checks they're in the right place before starting. Setup for all four panels is covered in [docs/panel-deployment.md](docs/panel-deployment.md).

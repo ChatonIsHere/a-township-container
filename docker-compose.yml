@@ -32,5 +32,31 @@ services:
             ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
             ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}
 
+    # optional web admin panel, off by default. Start it with:
+    #   docker compose --profile panel up -d
+    # It needs PANEL_PASSWORD set in .env. Every change it makes goes through
+    # tavern-config or the game's console port over this network; game-source is
+    # only read for the log tail
+    tavern-panel:
+        build:
+            context: .
+            dockerfile: panel/Dockerfile
+        # image: ghcr.io/chatonishere/a-township-container-panel:latest
+        container_name: tavern-panel
+        restart: unless-stopped
+        profiles: [panel]
+        depends_on:
+            - a-township-container
+        ports:
+            - '${PANEL_PORT:-8080}:8080'
+        volumes:
+            - ./tavern-config:/data/tavern-config
+            # read only, for tailing the MelonLoader log into the panel console
+            - ./game-source:/game-files:ro
+        environment:
+            PANEL_PASSWORD: ${PANEL_PASSWORD:-}
+            GAME_HOST: a-township-container
+            RCON_PORT: ${RCON_PORT:-1760}
+
 volumes:
     wine-prefix:

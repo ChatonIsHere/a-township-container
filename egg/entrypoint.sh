@@ -94,6 +94,10 @@ TAVERN_SERVER_JSON="$TAVERN_CONFIG_DIR/tavern_server.json"
 tmp=$(mktemp)
 jq --argjson port "${SERVER_PORT:-1757}" '.server_port = $port' "$TAVERN_SERVER_JSON" > "$tmp" && mv "$tmp" "$TAVERN_SERVER_JSON"
 
+# desired mod set for TavernLib's boot-time reconciler; empty means "manage nothing"
+MODSLIST_JSON="$TAVERN_CONFIG_DIR/modslist.json"
+[ -f "$MODSLIST_JSON" ] || echo '{"schema":1,"repos":[],"mods":[]}' > "$MODSLIST_JSON"
+
 export DISPLAY=:1
 
 # both of these are created in the image already, so don't let a permission quirk kill the start
