@@ -57,6 +57,8 @@ docker compose run --rm a-township-container update
 
 To launch without any patching or update checks set `AUTO_PATCH=false` in your `.env`.
 
+To pick the scene the server runs, set `SCENE` to `normal`, `quest` or `tutorial` in your `.env` (`tutorial` needs TavernLib 1.5.3 or newer). It's written into `server_settings.json` as `quest_scene` / `tutorial_scene` on every start, and the server is launched with the matching `/questScene` or `/tutorialScene` argument, so the scene it runs, what it tells joining players and what the community list shows all agree. Leave `SCENE` unset to go by whatever `server_settings.json` already says.
+
 To update the container itself to the latest published image:
 
 ```

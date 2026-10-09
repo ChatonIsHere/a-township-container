@@ -3,6 +3,8 @@
 # instance datastore mounted into the container and settings handed over as environment variables
 set -e
 
+. /tavern-settings.sh
+
 # AMP starts us in the instance's app directory; the game files get their own folder inside it so
 # they aren't tangled up with the wine prefix, mirroring the layout the compose setup mounts
 INSTANCE_DIR="$(pwd)"
@@ -28,6 +30,7 @@ if [ ! -f "$GAME_DIR/A Township Tale.exe" ] || [ ! -d "$GAME_DIR/A Township Tale
     echo "so both sit directly inside it (not nested inside another folder), then start again"
     exit 1
 fi
+ensure_exe_runnable "$GAME_DIR/A Township Tale.exe"
 
 # the instance datastore starts empty, so copy the baked wine prefix template into place on first boot
 if [ ! -f "$WINEPREFIX/system.reg" ]; then
@@ -93,6 +96,18 @@ TAVERN_SERVER_JSON="$TAVERN_CONFIG_DIR/tavern_server.json"
 tmp=$(mktemp)
 jq --argjson port "${SERVER_PORT:-1757}" '.server_port = $port' "$TAVERN_SERVER_JSON" > "$tmp" && mv "$tmp" "$TAVERN_SERVER_JSON"
 
+# TavernLib only adds a new settings key when it regenerates the whole file, so an older
+# instance's file can lack keys that AMP's settings page now maps. Fill
+# them in at TavernLib's own defaults, never touching a value that's already there, so that page
+# always has a key to read and write. Skipped while the file doesn't exist yet: TavernLib writes
+# the complete file itself on first launch.
+SERVER_SETTINGS_JSON="$TAVERN_CONFIG_DIR/server_settings.json"
+if [ -s "$SERVER_SETTINGS_JSON" ] && jq -e 'type == "object"' "$SERVER_SETTINGS_JSON" > /dev/null 2>&1; then
+    tmp=$(mktemp)
+    jq '{tutorial_scene: false, garbage_collection_timer: 30} + .' "$SERVER_SETTINGS_JSON" > "$tmp" \
+        && mv "$tmp" "$SERVER_SETTINGS_JSON"
+fi
+
 export DISPLAY=:1
 
 # both of these are created in the image already, so don't let a permission quirk kill the start
@@ -145,6 +160,8 @@ GAME_ARGS=(
     /identity_token "${ATT_IDENTITY_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwiVXNlcm5hbWUiOiJTZXJ2ZXIiLCJyb2xlIjoiSWRlbnRpdHkiLCJpc19tZW1iZXIiOiJUcnVlIiwiaXNfZGV2IjoiVHJ1ZSIsImV4cCI6OTk5OTk5OTk5OSwiaXNzIjoiQWx0YVdlYkFQSSIsImF1ZCI6IkFsdGFDbGllbnQifQ.DL8u_uiiZbKAwBCNoiwlEz2ba6J5Z0WoAPpq4JPQ9tg}"
 )
 [ "${DEBUG:-false}" = "true" ] && GAME_ARGS+=(/debug_helper)
+SCENE_ARG=$(scene_arg "$SERVER_SETTINGS_JSON")
+[ -n "$SCENE_ARG" ] && GAME_ARGS+=("$SCENE_ARG")
 
 # AMP sends its stop signal to this script, and exec'ing wine here doesn't help: wine launches the
 # game through start.exe, so the signal lands on that and the game carries on running. Signal the

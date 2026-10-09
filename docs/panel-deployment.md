@@ -45,6 +45,8 @@ The install script doesn't download anything (there's nothing it legally can), i
 
 Upload the contents of your prepared `game-source` folder into the server's `game-source` directory, so `A Township Tale.exe` and `A Township Tale_Data` sit directly inside it. That folder is created for you on the first start attempt if it isn't there yet. Uploading ~4.4GB as thousands of files over SFTP is painfully slow, so zip it first (contents, not the folder itself), upload the single zip, and use the panel file manager's `Unarchive` option on it. Delete the zip afterwards to get your space back.
 
+Panel file managers extract archives without Unix permissions, so `A Township Tale.exe` can arrive without its execute bit, which stops Wine starting it. The container sets the bit itself on every start, so there's nothing to do about it by hand.
+
 ### First start
 
 Hit start and watch the console. The first boot copies the wine prefix into place, downloads MelonLoader, TavernLib, and the TavernDefaults core patch (so the machine needs outbound internet on first start), and then launches the game. The panel marks the server as online when TavernLib's `Starting auth listening cycle` line appears. Later starts skip the prefix copy and only re-download mods when they're outdated, exactly like the compose image.
@@ -55,6 +57,7 @@ A few things that moved compared to the compose setup:
 - Back up `server-data` and `tavern-config`. On older versions of this image the links pointed the other way and the real data lived inside `.wine`; the first start on the current version moves it out automatically
 - `tavern_server.json`'s `server_port` is kept in sync with your primary allocation automatically
 - To force a full re-patch, delete `.att-patch-meta.json` from the server's root directory and restart. To skip patching entirely, set the `Auto patch` variable to `false`
+- The `Scene` variable picks the scene the server runs: `normal`, `quest` or `tutorial` (`tutorial` needs TavernLib 1.5.3 or newer). It's applied on every start, both to `server_settings.json` and as the matching launch argument, so the server, joining players and the community list agree on it. Leave it empty to go by whatever `server_settings.json` already says
 
 ## CubeCoders AMP
 
@@ -94,7 +97,7 @@ If you'd rather pull them in as a configuration repository (`Configuration` → 
 
 The `Auto patch` and `Debug helper` settings and the three token fields in AMP's configuration UI map to the same `AUTO_PATCH`, `DEBUG`, and `ATT_*_TOKEN` values the compose setup uses. Leave the tokens empty to use the offline server tokens.
 
-The template also surfaces TavernLib's own configuration in AMP, all under the `A Township Tale` section of the configuration menu: the `Listing` and `Access` groups come from `server_settings.json` (name, password, player limit, region, whitelist), and the world/gameplay groups (`Saving` through `Performance`) from `ServerConfiguration.json`. Both files only exist once the server has started and generated them, so the values appear after the first successful boot rather than before it. Editing them in AMP writes to the same files you'd otherwise edit by hand.
+The template also surfaces TavernLib's own configuration in AMP, all under the `A Township Tale` section of the configuration menu: the `Listing` and `Access` groups come from `server_settings.json` (name, password, player limit, region, whitelist, and the Quest and Tutorial scenes), and the world/gameplay groups (`Saving` through `Performance`) from `ServerConfiguration.json` - apart from `Garbage collection interval` under `Performance`, which is TavernLib's and lives in `server_settings.json`. Scene and garbage collection changes take effect on the next restart. Tutorial overrides Quest when both are ticked, and whichever scene is on is also passed to the server as its launch argument, so the server actually runs it. Both files only exist once the server has started and generated them, so the values appear after the first successful boot rather than before it. Editing them in AMP writes to the same files you'd otherwise edit by hand.
 
 You can type commands into AMP's console too. TavernLib closes the game's built-in remote console and serves its own over a websocket on the RCON port, so the image bridges that onto the console: whatever you type is sent to the server, and console output appears alongside the log. It connects once the server finishes starting, and prints a single line if it can't (the server still runs normally).
 

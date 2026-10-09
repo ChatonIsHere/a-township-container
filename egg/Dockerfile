@@ -59,6 +59,7 @@ RUN export WINEPREFIX=/opt/wine-template && wineboot --init && wineserver --wait
 USER root
 COPY egg/entrypoint.sh /entrypoint.sh
 COPY patcher.sh /patcher.sh
+COPY tavern-settings.sh /tavern-settings.sh
 # bridges TavernLib's websocket console onto stdin/stdout, stdlib only so there's nothing to pip install
 COPY console-bridge.py /console-bridge.py
 RUN chmod +x /entrypoint.sh /patcher.sh /console-bridge.py
