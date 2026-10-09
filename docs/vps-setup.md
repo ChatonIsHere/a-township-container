@@ -330,7 +330,7 @@ docker compose down        # stop the server
 docker compose up -d       # start it again
 ```
 
-Your world saves live in `~/att-server/server-data` on the VPS, and the server's config files (`server_settings.json`, `users.json`) in `~/att-server/tavern-config`; those are the folders to back up. Mods and the patch are checked for updates on every server start, and you can force a full re-patch at the latest releases with `docker compose down` followed by `docker compose run --rm a-township-container update`.
+Your world saves live in `~/att-server/server-data` on the VPS, and the server's config files (`server_settings.json`, `users.json`) in `~/att-server/tavern-config`; those are the folders to back up. TavernLib also rotates the game's log into `server-data/Servers/-1/Logs/logs/Archives` once at every start and again whenever it passes 10MB, keeping the 20 newest, so expect that folder to grow to a couple of hundred MB on a busy server - skip it in your backups if space is tight. Mods and the patch are checked for updates on every server start, and you can force a full re-patch at the latest releases with `docker compose down` followed by `docker compose run --rm a-township-container update`.
 
 Give it a minute or two after the logs settle, then try connecting to the game using your server's IP.
 

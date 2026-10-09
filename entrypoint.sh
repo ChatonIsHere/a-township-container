@@ -1,11 +1,14 @@
 #!/bin/bash
 set -e
 
+. /tavern-settings.sh
+
 # server-data is mounted into the wine prefix separately
 if [ ! -f "/game-files/A Township Tale.exe" ]; then
     echo "A Township Tale.exe is missing from /game-files"
     exit 1
 fi
+ensure_exe_runnable "/game-files/A Township Tale.exe"
 
 cd /game-files
 
@@ -63,6 +66,11 @@ GAME_ARGS=(
     /identity_token "${ATT_IDENTITY_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIwIiwiVXNlcm5hbWUiOiJTZXJ2ZXIiLCJyb2xlIjoiSWRlbnRpdHkiLCJpc19tZW1iZXIiOiJUcnVlIiwiaXNfZGV2IjoiVHJ1ZSIsImV4cCI6OTk5OTk5OTk5OSwiaXNzIjoiQWx0YVdlYkFQSSIsImF1ZCI6IkFsdGFDbGllbnQifQ.DL8u_uiiZbKAwBCNoiwlEz2ba6J5Z0WoAPpq4JPQ9tg}"
 )
 [ "${DEBUG:-false}" = "true" ] && GAME_ARGS+=(/debug_helper)
+
+SERVER_SETTINGS_JSON="$TAVERN_CONFIG_DIR/server_settings.json"
+apply_scene_env "$SERVER_SETTINGS_JSON"
+SCENE_ARG=$(scene_arg "$SERVER_SETTINGS_JSON")
+[ -n "$SCENE_ARG" ] && GAME_ARGS+=("$SCENE_ARG")
 
 # exec replaces the shell with wine so it receives docker stop's signal directly instead of it being swallowed by bash
 exec wine "A Township Tale.exe" "${GAME_ARGS[@]}"

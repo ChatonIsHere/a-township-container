@@ -38,6 +38,7 @@ WORKDIR /game-files
 
 COPY entrypoint.sh /entrypoint.sh
 COPY patcher.sh /patcher.sh
+COPY tavern-settings.sh /tavern-settings.sh
 RUN chmod +x /entrypoint.sh /patcher.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

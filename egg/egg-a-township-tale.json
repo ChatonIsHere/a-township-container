@@ -49,6 +49,16 @@
             "field_type": "text"
         },
         {
+            "name": "Scene",
+            "description": "Which scene the server runs: normal, quest or tutorial (tutorial needs TavernLib 1.5.3 or newer). Leave empty to keep whatever scene server_settings.json already has. Takes effect on the next restart.",
+            "env_variable": "SCENE",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|in:normal,quest,tutorial",
+            "field_type": "text"
+        },
+        {
             "name": "ATT access token",
             "description": "Access token passed to the server. The default is the offline server token, which is what you want unless you know otherwise.",
             "env_variable": "ATT_ACCESS_TOKEN",

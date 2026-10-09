@@ -3,6 +3,8 @@
 # hands us the startup command in $STARTUP with {{VARIABLE}} placeholders, and reads stdout as the console
 set -e
 
+. /tavern-settings.sh
+
 cd /home/container
 
 # the game files get their own folder rather than sitting loose in the server root, so they aren't
@@ -28,6 +30,7 @@ if [ ! -f "$GAME_DIR/A Township Tale.exe" ] || [ ! -d "$GAME_DIR/A Township Tale
     echo "so both sit directly inside it (not nested inside another folder), then start again"
     exit 1
 fi
+ensure_exe_runnable "$GAME_DIR/A Township Tale.exe"
 
 # the panel's data directory starts empty, so copy the baked wine prefix template into place on first boot
 if [ ! -f "$WINEPREFIX/system.reg" ]; then
@@ -137,6 +140,12 @@ CONSOLE_PID=$!
 # swap Wings' {{VAR}} placeholders for shell expansions, same as the yolks images do
 MODIFIED_STARTUP=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g')
 [ "${DEBUG:-false}" = "true" ] && MODIFIED_STARTUP="${MODIFIED_STARTUP} /debug_helper"
+# appended here rather than templated into the egg's startup string, so servers created before
+# this existed and ones with a customised startup pick it up too
+SERVER_SETTINGS_JSON="$TAVERN_CONFIG_DIR/server_settings.json"
+apply_scene_env "$SERVER_SETTINGS_JSON"
+SCENE_ARG=$(scene_arg "$SERVER_SETTINGS_JSON")
+[ -n "$SCENE_ARG" ] && MODIFIED_STARTUP="${MODIFIED_STARTUP} ${SCENE_ARG}"
 
 # exec'ing wine here doesn't get the signal where it needs to go: wine launches the game through
 # start.exe, so a stop lands on that and the game carries on running. Signal the game process
