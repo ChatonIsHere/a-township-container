@@ -205,7 +205,7 @@ services:
         container_name: a-township-container
         restart: unless-stopped
         # time to save the world when stopping
-        stop_grace_period: 2m
+        stop_grace_period: 5m
         # cpus: 2
         # mem_limit: 4g
         volumes:
