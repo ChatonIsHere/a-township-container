@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# the panel images run the game from a different directory, standalone keeps the /game-files default
+# the panel images keep the game somewhere else
 GAME_DIR="${GAME_DIR:-/game-files}"
 META="$GAME_DIR/.att-patch-meta.json"
 MANAGED_DIR="$GAME_DIR/A Township Tale_Data/Managed"
@@ -25,15 +25,16 @@ meta_set() {
     jq --arg k "$1" --arg v "$2" '.[$k] = $v' "$META" > "$tmp" && mv "$tmp" "$META"
 }
 
-# one dropped request from GitHub must not kill the boot (set -e), so everything that talks
-# to it retries a few times - with the connect attempt bounded, or an offline node would sit
-# in TCP timeouts for minutes before the already-installed game gets to start. Only the
-# downloads retry hard errors too (GitHub rate-limits with 403): they run rarely, whereas the
-# version probes below run every boot and should fail fast so an installed server just boots
-# with what it has
+# Retry so one dropped request doesn't kill the boot, with a connect timeout so an offline server
+# still starts quickly. Only downloads retry HTTP errors too (GitHub rate-limits with 403); the
+# version checks run every boot and should give up fast, leaving the installed version in place
 CURL_RETRY="--retry 3 --retry-delay 2 --connect-timeout 10"
 
-fetch() { curl -sfL $CURL_RETRY --retry-all-errors -o "$1" "$2"; }
+fetch() {
+    curl -sfL $CURL_RETRY --retry-all-errors -o "$1" "$2" && return 0
+    echo "PATCHER: couldn't download $2" >&2
+    return 1
+}
 
 redirect_of() { curl -sfI $CURL_RETRY -o /dev/null -w '%{redirect_url}' "$1"; }
 

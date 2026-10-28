@@ -2,11 +2,11 @@
 
 [![Build Status](https://github.com/ChatonIsHere/a-township-container/actions/workflows/publish.yml/badge.svg)](https://github.com/ChatonIsHere/a-township-container/actions/workflows/publish.yml)
 
-A Township Tale server container using The Modding Tavern's server implementation.
+An A Township Tale server in Docker, running The Modding Tavern's server mods. You bring the game files and the container patches them.
 
 ## Running the server
 
-You can grab the published image instead of building it yourself. Create a folder with a `docker-compose.yml` like this:
+Make a folder with this `docker-compose.yml`:
 
 ```yaml
 services:
@@ -14,6 +14,8 @@ services:
         image: ghcr.io/chatonishere/a-township-container:latest
         container_name: a-township-container
         restart: unless-stopped
+        # time to save the world when stopping
+        stop_grace_period: 2m
         # cpus: 2
         # mem_limit: 4g
         volumes:
@@ -22,21 +24,15 @@ services:
             - ./tavern-config:/root/.wine/drive_c/users/root/AppData/Roaming/TheModdingTavern
             - wine-prefix:/root/.wine
         ports:
-            # gameserver
-            - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp'
-            - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/tcp'
-            # rcon
-            - '${RCON_PORT:-1760}:${RCON_PORT:-1760}/udp'
-            - '${RCON_PORT:-1760}:${RCON_PORT:-1760}/tcp'
-            # forest
-            - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/udp'
-            - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/tcp'
-            # authentication
-            - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/udp'
-            - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp'
+            - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp' # game
+            - '1760:1760/tcp' # console, for TavernLauncher's Remote Console
+            - '1761:1761/tcp' # the game's web server
+            - '1762:1762/tcp' # TavernLib's login
         environment:
             SERVER_PORT: ${SERVER_PORT:-1757}
             AUTO_PATCH: ${AUTO_PATCH:-true}
+            DEBUG: ${DEBUG:-false}
+            SCENE: ${SCENE:-}
             ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
             ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
             ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}
@@ -45,38 +41,45 @@ volumes:
     wine-prefix:
 ```
 
-Then create a folder called `game-source` in the same folder as your `docker-compose.yml` and upload the game files to it. `A Township Tale.exe` and the `A Township Tale_Data` folder should be sitting directly at the root of `game-source`. On every start the container patches the install itself, exactly the way TavernLauncher does on Windows (the latest MelonLoader, TavernLib, and TavernDefaults core `Root.Township.dll` patch), and skips anything already current. Already-patched files from TavernLauncher work too. See [docs/patching-installation.md](docs/patching-installation.md) for where to get the base game files.
+Put the game files in a `game-source` folder next to it, with `A Township Tale.exe` and `A Township Tale_Data` directly inside. [docs/patching-installation.md](docs/patching-installation.md) covers getting them. Then `docker compose up -d`.
 
-You can then run `docker compose up -d` to start the server.
+A new world spends its first few minutes after starting up generating the forest, using all the CPU it can. Anyone who joins before that finishes gets a broken forest.
 
-To force a re-patch with the latest releases (after stopping the server with `docker compose down`):
+On every start the container installs or updates MelonLoader, TavernLib and the TavernDefaults patch, the same as TavernLauncher does on Windows. Files you already patched with TavernLauncher work too.
 
-```
-docker compose run --rm a-township-container update
-```
+Your data ends up in two folders next to the compose file:
 
-To launch without any patching or update checks set `AUTO_PATCH=false` in your `.env`.
+- `server-data`: the game's own folder, with your world saves
+- `tavern-config`: TavernLib's `server_settings.json` and `users.json`
 
-To pick the scene the server runs, set `SCENE` to `normal`, `quest` or `tutorial` in your `.env` (`tutorial` needs TavernLib 1.5.3 or newer). It's written into `server_settings.json` as `quest_scene` / `tutorial_scene` on every start, and the server is launched with the matching `/questScene` or `/tutorialScene` argument, so the scene it runs, what it tells joining players and what the community list shows all agree. Leave `SCENE` unset to go by whatever `server_settings.json` already says.
+The server runs as whoever owns `game-source` (uid 1000 if that's root), so these stay editable without `sudo`. Set `PUID` and `PGID` to pick a different user. Files left root-owned by older versions of the image are handed over on the next start.
 
-To update the container itself to the latest published image:
+Renting a VPS for it? [docs/vps-setup.md](docs/vps-setup.md) is a beginner's walkthrough. Hosting panels (Pterodactyl, Pelican, Calagopus, AMP) are covered in [docs/panel-deployment.md](docs/panel-deployment.md).
 
-```
-docker compose pull
-docker compose up -d
-```
+## Settings
 
-Two AppData paths within wine are mapped to their own folders, so they're persisted and accessible to you lovely people: `server-data` (the game's own `A Township Tale` folder, where your world saves live) and `tavern-config` (TavernLib's `TheModdingTavern` folder, holding the config files above).
+Set these in a `.env` file next to the compose file.
 
-Setting this up on a rented VPS? There's a full beginner walkthrough in [docs/vps-setup.md](docs/vps-setup.md) covering renting the box, securing it, and getting the container running.
+| Setting | |
+| --- | --- |
+| `SERVER_PORT` | Game port, default `1757` |
+| `AUTO_PATCH` | `false` skips patching and update checks |
+| `SCENE` | `normal`, `quest` or `tutorial` (`tutorial` needs TavernLib 1.5.3 or newer). Written to `server_settings.json` and passed to the server on every start. Unset keeps what `server_settings.json` says |
+| `DEBUG` | `true` launches with `/debug_helper` |
+| `PUID`, `PGID` | User and group the server runs as. Add them to `environment` to use them |
+| `ATT_ACCESS_TOKEN`, `ATT_REFRESH_TOKEN`, `ATT_IDENTITY_TOKEN` | Default to the offline server tokens |
 
-## Running under a game panel
+Stopping the container saves the world first: it saves and quits through the game's console, and `stop_grace_period` gives it up to 2 minutes. If the console can't be reached, the server is stopped without saving.
 
-Alongside the standard image above (which is unchanged, keep using it exactly as before), two extra flavours get published for hosting panels: `latest-egg` for Pterodactyl, Pelican, and Calagopus (one egg covers all three, it's in the [egg](egg/) folder) and `latest-amp` for CubeCoders AMP (template in the [amp](amp/) folder). You still provide your own game files either way, and the container checks they're in the right place before starting. Setup for all four panels is covered in [docs/panel-deployment.md](docs/panel-deployment.md).
+## Updating
 
-## Building your own image
+The image: `docker compose pull`, then `docker compose up -d`.
 
-Clone this repo and run `docker compose up -d --build` instead of pulling the published image. Pushing to `main` rebuilds and republishes the `latest` tag automatically via GitHub Actions. Pushing a version tag (format `YY.MM.PATCH-TAVERNLAUNCHERVERSION`, e.g. `26.7.1-1.0.0`) publishes that as its own tag instead.
+The mods and patch update themselves on start. To force a re-patch at the latest releases, stop the server with `docker compose down`, then run `docker compose run --rm a-township-container update`.
+
+## Building it yourself
+
+Clone the repo and run `docker compose up -d --build`. Pushing to `main` publishes `latest`, and a version tag like `26.8.2-1.8.3` (`YY.MM.PATCH-TAVERNLAUNCHERVERSION`) publishes that tag.
 
 ## Note
 

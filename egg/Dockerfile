@@ -1,7 +1,6 @@
-# Pterodactyl/Pelican/Calagopus variant - published as :latest-egg
-# Wings bind-mounts a single (initially empty) data directory over /home/container and runs the
-# container as its own uid regardless of what this image says, so everything the standalone image
-# spreads over three mounts lives together in /home/container here instead
+# Pterodactyl/Pelican/Calagopus variant, published as :latest-egg
+# Wings mounts one empty data directory over /home/container and runs the container as its own uid,
+# so everything the standalone image keeps in three mounts lives together in /home/container here
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -12,23 +11,18 @@ ENV DEBIAN_FRONTEND=noninteractive \
     WINEDEBUG=err+all \
     WINEDLLOVERRIDES="mscoree=d;mshtml=d;version=n,b" \
     XDG_RUNTIME_DIR=/tmp/xdg-runtime \
-    # patcher.sh patches the game where Wings mounts it instead of /game-files
-    # (entrypoint.sh re-exports this, it's here so the value is visible in docker inspect)
+    # where patcher.sh finds the game (entrypoint.sh sets it too)
     GAME_DIR=/home/container/game-source
 
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
-    apt-get install -y --no-install-recommends \
-        wget curl jq gnupg2 ca-certificates xvfb \
-        cabextract unzip p7zip-full winetricks xdg-user-dirs dbus-x11 \
-        # for the websocket console bridge; the AMP base image already ships python3.
-        # python3-minimal is not enough, it omits stdlib modules the bridge needs (json included)
-        python3 && \
+    # python3 runs console-bridge.py; python3-minimal lacks modules it needs, json included
+    apt-get install -y --no-install-recommends curl jq ca-certificates procps unzip xvfb python3 && \
     mkdir -pm755 /etc/apt/keyrings && \
-    wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
-    wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources && \
+    curl -fsSLo /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
+    curl -fsSLo /etc/apt/sources.list.d/winehq-jammy.sources https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources && \
     apt-get update && \
-    # wine is pinned so rebuilds are reproducible; apt needs every wine package pinned to resolve a non-latest version
+    # pinned so rebuilds are reproducible; apt needs every wine package pinned to resolve a non-latest version
     apt-get install -y --no-install-recommends \
         winehq-stable=10.0.0.0~jammy-1 \
         wine-stable=10.0.0.0~jammy-1 \
@@ -39,30 +33,23 @@ RUN dpkg --add-architecture i386 && \
 # no sound card in the container, so route ALSA to a null device instead of erroring/crashing on audio init
 RUN printf 'pcm.!default {\n    type null\n}\nctl.!default {\n    type null\n}\n' > /etc/asound.conf
 
-# Wings runs server containers as uid 988 by default, so bake in a matching user for wine to resolve
+# Wings runs containers as uid 988 by default, so give wine a matching user
 RUN useradd -m -u 988 -d /home/container -s /bin/bash container
 
-# Xvfb can't create this itself when the container runs as a non-root uid, so make it up front
-RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
-
-# the wine prefix template is still created once at build time, but it can't live in /home/container
-# (Wings mounts over it), so it's baked to /opt/wine-template and copied into place on first boot
-RUN mkdir -p "$XDG_RUNTIME_DIR" /opt/wine-template && \
-    chmod 1777 "$XDG_RUNTIME_DIR" && \
+# made here because Xvfb and wine can't create them as a non-root user. The prefix is built in
+# /opt (Wings mounts over /home/container) and copied into place on first start
+RUN mkdir -p /tmp/.X11-unix "$XDG_RUNTIME_DIR" /opt/wine-template && \
+    chmod 1777 /tmp/.X11-unix "$XDG_RUNTIME_DIR" && \
     chown container:container /opt/wine-template
 
 USER container
+# readable by whatever uid the panel runs the server as
 RUN export WINEPREFIX=/opt/wine-template && wineboot --init && wineserver --wait && \
-    # the prefix must be readable by whatever uid the panel ends up running as
     chmod -R a+rX /opt/wine-template
 
 USER root
-COPY egg/entrypoint.sh /entrypoint.sh
-COPY patcher.sh /patcher.sh
+COPY --chmod=755 egg/entrypoint.sh patcher.sh console-bridge.py /
 COPY tavern-settings.sh /tavern-settings.sh
-# bridges TavernLib's websocket console onto stdin/stdout, stdlib only so there's nothing to pip install
-COPY console-bridge.py /console-bridge.py
-RUN chmod +x /entrypoint.sh /patcher.sh /console-bridge.py
 
 USER container
 WORKDIR /home/container

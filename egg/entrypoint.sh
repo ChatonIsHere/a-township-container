@@ -1,29 +1,28 @@
 #!/bin/bash
-# Wings owns the container lifecycle: it mounts the server's data directory over /home/container,
-# hands us the startup command in $STARTUP with {{VARIABLE}} placeholders, and reads stdout as the console
+# Wings mounts the server's directory over /home/container, passes the startup command in $STARTUP
+# with {{VARIABLE}} placeholders, and uses stdin/stdout as the console
 set -e
+
+# a stop before the game is running just ends the script (as PID 1, bash would ignore it)
+trap 'exit 0' TERM INT
 
 . /tavern-settings.sh
 
 cd /home/container
 
-# the game files get their own folder rather than sitting loose in the server root, so they aren't
-# tangled up with the wine prefix, mirroring the layout the compose setup mounts
+# the game gets its own folder so it isn't mixed in with the wine prefix
 export GAME_DIR=/home/container/game-source
 
-# these are set in the image too, but don't rely on that surviving however the panel spawns us:
-# MelonLoader hooks the game through a proxy version.dll, and wine only loads it when told to
-# prefer the native one. Without the override the game boots vanilla, TavernLib never loads, and
-# the only symptom is an empty MelonLoader log while Unity happily starts
+# also set in the image, but the panel may not pass them on. Without version=n,b wine skips
+# MelonLoader's proxy version.dll and the game boots unmodded with no error
 export WINEARCH="${WINEARCH:-win64}"
 export WINEPREFIX="${WINEPREFIX:-/home/container/.wine}"
 export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-mscoree=d;mshtml=d;version=n,b}"
 export WINEDEBUG="${WINEDEBUG:-err+all}"
 
-# create it up front so it's there to upload into, even on a start that's about to fail the check
+# created first so there's somewhere to upload to, even on a start that fails the check below
 mkdir -p "$GAME_DIR"
 
-# the game files can't ship with the image, so check the upload actually landed in the right place
 if [ ! -f "$GAME_DIR/A Township Tale.exe" ] || [ ! -d "$GAME_DIR/A Township Tale_Data" ]; then
     echo "A Township Tale.exe and/or the A Township Tale_Data folder are missing from game-source"
     echo "Upload the contents of your prepared game-source folder into the game-source directory"
@@ -32,7 +31,7 @@ if [ ! -f "$GAME_DIR/A Township Tale.exe" ] || [ ! -d "$GAME_DIR/A Township Tale
 fi
 ensure_exe_runnable "$GAME_DIR/A Township Tale.exe"
 
-# the panel's data directory starts empty, so copy the baked wine prefix template into place on first boot
+# the server directory starts empty, so copy in the prefix built into the image
 if [ ! -f "$WINEPREFIX/system.reg" ]; then
     echo "First start - copying the wine prefix into place (this only happens once)"
     mkdir -p "$WINEPREFIX"
@@ -45,34 +44,26 @@ else
     echo "AUTO_PATCH=false - skipping patch checks"
 fi
 
-# wine names the profile folder after the running user, falling back to the bare uid when it has no
-# /etc/passwd entry (which is what happens if the panel is set to run as some other uid) - mirror
-# that exactly, or the config gets written somewhere the game never looks
-WINE_USER="$(id -un 2>/dev/null || id -u)"
+# wine names the profile folder after $USER, which the panel may not set. A uid with no passwd
+# entry gets a fixed name (id -un prints the bare uid there, but still fails)
+WINE_USER=$(id -un 2>/dev/null) || WINE_USER=container
+export USER="$WINE_USER"
 
 ROAMING="$WINEPREFIX/drive_c/users/$WINE_USER/AppData/Roaming"
 
-# the compose setup exposes the saves and the TavernLib config as their own mounts, which a panel
-# can't do - and panel file managers can refuse to follow symlinks (Wings flat-out errors on
-# them), so a link at the root pointing into the prefix can render as a broken-looking file.
-# Instead the real directories live at the top of the server root where they're browsable, and
-# the prefix paths the game writes to are the symlinks, pointing back out at them - wine follows
-# symlinks fine, it's only the file managers that won't
+# The saves and TavernLib config live in real folders at the top of the server directory, where
+# the panel's file manager can browse them (Wings won't follow symlinks). The paths inside the
+# prefix are symlinks back out to them, which wine follows fine.
 link_into_prefix() {
     top="/home/container/$1"
     roam="$ROAMING/$2"
-    # earlier versions linked the other way round: a symlink at the top, the real directory in
-    # the prefix. Anything at the top that isn't a real directory - that old link, or a stray
-    # file left by an archive round-trip that materialised it - has to go BEFORE the prefix
-    # directory is touched, or the migration below would resolve through the old link and copy
-    # the directory into itself
+    # older versions linked the other way round. Clear whatever isn't a real folder at the top
+    # first, or the move below would follow the old link and copy the folder into itself
     { [ -d "$top" ] && [ ! -L "$top" ]; } || rm -rf "$top"
     mkdir -p "$ROAMING"
     if [ -d "$roam" ] && [ ! -L "$roam" ]; then
-        # move what the game already wrote (world saves included) out to the browsable spot: a
-        # rename when the top is empty, so migrating never needs spare disk a quota'd server
-        # might not have; the copy fallback only runs when both sides hold data (an old-layout
-        # .wine backup restored over an already-migrated install), where the restored files win
+        # a rename needs no spare disk. Both sides only hold data when an old-layout .wine backup
+        # was restored over a migrated install, and then the restored files win
         if [ ! -e "$top" ]; then
             mv "$roam" "$top"
         else
@@ -81,15 +72,12 @@ link_into_prefix() {
         fi
     fi
     mkdir -p "$top"
-    # derived rather than hardcoded so it survives a WINEPREFIX override, and relative so it
-    # still resolves when the volume is inspected or restored outside the container
+    # relative, so it still resolves outside the container or under another WINEPREFIX
     ln -sfn "$(realpath --relative-to="$ROAMING" "$top")" "$roam"
 }
 link_into_prefix server-data "A Township Tale"
 link_into_prefix tavern-config TheModdingTavern
 
-# TavernLib generates its JSON configs in here on first launch - the game finds them through the
-# prefix symlink, so the real directory can be used directly
 TAVERN_CONFIG_DIR="/home/container/tavern-config"
 
 TAVERN_SERVER_JSON="$TAVERN_CONFIG_DIR/tavern_server.json"
@@ -99,7 +87,7 @@ jq --argjson port "${SERVER_PORT:-1757}" '.server_port = $port' "$TAVERN_SERVER_
 
 export DISPLAY=:1
 
-# both of these are created in the image already, so don't let a permission quirk kill the start
+# both exist in the image already, so a permission quirk here mustn't stop the start
 rm -f /tmp/.X1-lock /tmp/.X11-unix/X1 2>/dev/null || true
 mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null || true
 
@@ -119,53 +107,34 @@ wine reg add "HKEY_CURRENT_USER\Software\Wine\WineDbg" /v ShowCrashDialog /t REG
 # the game has to run from the directory its own files are in
 cd "$GAME_DIR"
 
-# MelonLoader writes its logs here, so now that goes to the panel console (and is where the ready-detection line comes from)
+# MelonLoader's log goes to the panel console, which watches it for the ready line. -n 0 so a
+# restart doesn't replay the previous run's log
 mkdir -p MelonLoader
 touch MelonLoader/Latest.log
-# -n 0 so a stop/start doesn't replay the tail of the previous run before MelonLoader truncates it
 tail -n 0 -F MelonLoader/Latest.log &
 TAIL_PID=$!
 
-# TavernLib closes the game's own remote console and serves its own over a websocket on the RCON
-# port, so bridge that onto stdin/stdout: typed commands from the panel console go in, console
-# output comes out alongside the MelonLoader log. TavernLib writes the token itself when headless.
+# connects the panel console to TavernLib's websocket console. A background job would otherwise
+# get /dev/null as stdin, so it's handed the real one
 export TAVERN_CONSOLE_TOKEN_FILE="$TAVERN_CONFIG_DIR/console_token.txt"
 export RCON_PORT="${RCON_PORT:-1760}"
-# a background command in a non-interactive shell gets /dev/null on stdin, which would leave the
-# bridge reading EOF and no typed command ever reaching the game, so hand it the real one
 exec 3<&0
 python3 /console-bridge.py <&3 &
 CONSOLE_PID=$!
 
-# swap Wings' {{VAR}} placeholders for shell expansions, same as the yolks images do
+# turn Wings' {{VAR}} placeholders into shell expansions, as the yolks images do
 MODIFIED_STARTUP=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g')
 [ "${DEBUG:-false}" = "true" ] && MODIFIED_STARTUP="${MODIFIED_STARTUP} /debug_helper"
-# appended here rather than templated into the egg's startup string, so servers created before
-# this existed and ones with a customised startup pick it up too
+# added here rather than in the egg's startup string, so existing and customised servers get it too
 SERVER_SETTINGS_JSON="$TAVERN_CONFIG_DIR/server_settings.json"
 apply_scene_env "$SERVER_SETTINGS_JSON"
 SCENE_ARG=$(scene_arg "$SERVER_SETTINGS_JSON")
 [ -n "$SCENE_ARG" ] && MODIFIED_STARTUP="${MODIFIED_STARTUP} ${SCENE_ARG}"
 
-# exec'ing wine here doesn't get the signal where it needs to go: wine launches the game through
-# start.exe, so a stop lands on that and the game carries on running. Signal the game process
-# itself, then tear the whole wine session down if it won't go quietly.
 shutdown() {
     trap - TERM INT
-    echo "Stop requested, asking the server to close"
-    pkill -TERM -f "A Township Tale.exe" 2>/dev/null || true
-
-    # give it time to save the world before resorting to anything harsher
-    for _ in $(seq 1 20); do
-        pgrep -f "A Township Tale.exe" >/dev/null 2>&1 || break
-        sleep 1
-    done
-
-    if pgrep -f "A Township Tale.exe" >/dev/null 2>&1; then
-        echo "Server is still running, terminating the wine session"
-        wineserver -k 2>/dev/null || true
-    fi
-
+    echo "Stop requested, saving and closing the server"
+    stop_game
     kill "$XVFB_PID" "$TAIL_PID" "$CONSOLE_PID" 2>/dev/null || true
     wait 2>/dev/null || true
     echo "Server stopped"
@@ -173,11 +142,11 @@ shutdown() {
 }
 trap shutdown TERM INT
 
-# stdin belongs to the console bridge, so keep the game off it rather than have them compete
+# stdin belongs to the console bridge
 eval "${MODIFIED_STARTUP}" < /dev/null &
 GAME_PID=$!
 
-# the first wait gets interrupted by the trap; if the game exits on its own the second one is a no-op
+# the trap interrupts the first wait; if the game exits by itself the second returns at once
 wait "$GAME_PID" 2>/dev/null || true
 wait "$GAME_PID" 2>/dev/null || true
 

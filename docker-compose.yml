@@ -3,7 +3,8 @@ services:
         build: .
         container_name: a-township-container
         restart: unless-stopped
-        # Uncomment the following lines to limit CPU and memory usage
+        # time to save the world when stopping
+        stop_grace_period: 2m
         # cpus: 2
         # mem_limit: 4g
         volumes:
@@ -12,18 +13,10 @@ services:
             - ./tavern-config:/root/.wine/drive_c/users/root/AppData/Roaming/TheModdingTavern
             - wine-prefix:/root/.wine
         ports:
-            # gameserver
-            - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp'
-            - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/tcp'
-            # rcon
-            - '${RCON_PORT:-1760}:${RCON_PORT:-1760}/udp'
-            - '${RCON_PORT:-1760}:${RCON_PORT:-1760}/tcp'
-            # forest
-            - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/udp'
-            - '${FOREST_PORT:-1761}:${FOREST_PORT:-1761}/tcp'
-            # authentication
-            - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/udp'
-            - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp'
+            - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp' # game
+            - '1760:1760/tcp' # console, for TavernLauncher's Remote Console
+            - '1761:1761/tcp' # the game's web server
+            - '1762:1762/tcp' # TavernLib's login
         environment:
             SERVER_PORT: ${SERVER_PORT:-1757}
             AUTO_PATCH: ${AUTO_PATCH:-true}

@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """
-Bridges TavernLib's WebSocket console onto stdin/stdout so a game panel's console can drive it.
+Connects TavernLib's websocket console (RCON port, token from console_token.txt) to stdin/stdout,
+so a panel's console can send commands and show replies.
 
-TavernLib closes the game's built-in remote console and serves its own WebSocket one on the RCON
-port instead, authenticated with the console token it writes next to its configs. The panels only
-speak stdin/stdout, so this reads typed commands from stdin and prints console output to stdout,
-where it lands in the panel console alongside the MelonLoader log tail.
+`console-bridge.py run <command>...` runs commands one at a time and waits for each to finish.
 
-Deliberately stdlib-only: the images would otherwise need websocket-client from pip, which is
-awkward on the Debian base the AMP image builds on.
+Standard library only, so the images don't need pip.
 """
 
 import base64
@@ -26,13 +23,14 @@ PORT = int(os.environ.get("RCON_PORT", "1760"))
 TOKEN_FILE = os.environ.get("TAVERN_CONSOLE_TOKEN_FILE", "")
 # the game takes minutes to boot, and the console port only opens near the end of that
 CONNECT_TIMEOUT = int(os.environ.get("TAVERN_CONSOLE_TIMEOUT", "900"))
+# for run mode; a save on a big world takes a while
+COMMAND_TIMEOUT = int(os.environ.get("TAVERN_CONSOLE_COMMAND_TIMEOUT", "120"))
 
 OP_TEXT, OP_BINARY, OP_CLOSE, OP_PING, OP_PONG = 0x1, 0x2, 0x8, 0x9, 0xA
 
 
 def emit(line):
-    """One write per line: the recv loop and the stdin echo run on different threads, and print's
-    separate text/newline writes can interleave into torn lines in the panel console."""
+    """One write per line, so output from the two threads can't interleave mid-line."""
     sys.stdout.write(line + "\n")
     sys.stdout.flush()
 
@@ -243,11 +241,8 @@ def format_message(raw):
         if exception:
             return f"[error] {render_exception(exception)}"
 
-        # a command returning a value answers with CommandResult<T>, whose ResultString is only
-        # Result.ToString() - a bare type name for anything without a real ToString, which is
-        # where System.Collections.Generic.List`1[System.Object] came from. A ToString somebody
-        # actually wrote is the intended output though, so keep any ResultString that doesn't
-        # read as a type name, and render the serialised Result payload otherwise
+        # ResultString is Result.ToString(), which is just a type name unless the type overrides
+        # it. Use it when it's real text, otherwise render the Result itself
         result_string = data.get("ResultString")
         if isinstance(result_string, str) and result_string.strip() and not TYPE_NAME.fullmatch(result_string.strip()):
             return result_string.rstrip("\n")
@@ -266,10 +261,8 @@ def format_message(raw):
 
 def pump_stdin(ws):
     """Panel console input arrives on stdin, one command per line."""
-    # AMP hands us a pipe and doesn't echo what was typed, so without our echo the console
-    # shows replies with no sign of the command that produced them. Wings attaches a TTY,
-    # and a TTY echoes input by itself - echoing there would show every command twice.
-    # TAVERN_CONSOLE_ECHO=true/false overrides the guess for a panel that fits neither
+    # AMP gives us a pipe and doesn't show what was typed, so echo it. Wings uses a TTY, which
+    # echoes by itself. TAVERN_CONSOLE_ECHO=true/false overrides the guess
     override = os.environ.get("TAVERN_CONSOLE_ECHO", "").strip().lower()
     if override:
         echo = override in ("1", "true", "yes", "on")
@@ -292,39 +285,89 @@ def pump_stdin(ws):
     # stdin closing means the panel is done with us, not that the server should stop
 
 
-def main():
+def open_console(timeout, why):
+    """Connects and authenticates, or logs why not and returns None."""
     if not TOKEN_FILE:
-        log("TAVERN_CONSOLE_TOKEN_FILE is not set, console input is unavailable")
-        return 1
+        log(f"TAVERN_CONSOLE_TOKEN_FILE is not set, {why}")
+        return None
 
-    deadline = time.time() + CONNECT_TIMEOUT
+    deadline = time.time() + timeout
 
     token = read_token(TOKEN_FILE, deadline)
     if not token:
-        log(f"no console token appeared at {TOKEN_FILE}, console input is unavailable")
-        return 1
+        log(f"no console token appeared at {TOKEN_FILE}, {why}")
+        return None
 
     ws = None
     while time.time() < deadline and ws is None:
         try:
             ws = WebSocket.connect(HOST, PORT)
         except (OSError, ConnectionError):
-            time.sleep(3)
+            time.sleep(min(3, max(0, deadline - time.time())))
     if ws is None:
-        log(f"console did not open on port {PORT}, console input is unavailable")
-        return 1
+        log(f"console did not open on port {PORT}, {why}")
+        return None
 
     try:
         ws.send_text(token)
         reply = ws.recv()
-        if reply is None:
-            log("console closed the connection during authentication")
-            return 1
-        rendered = format_message(reply)
-        if "Connection Succeeded" not in reply:
-            log(f"console rejected the token: {rendered}")
-            return 1
-        log(f"connected, type commands into the panel console ({rendered})")
+    except (OSError, ConnectionError) as exc:
+        reply = None
+        log(f"console connection failed: {exc}")
+    if reply is None or "Connection Succeeded" not in reply:
+        if reply is not None:
+            log(f"console rejected the token: {format_message(reply)}")
+        ws.close()
+        return None
+    ws.authenticated_as = format_message(reply)
+    return ws
+
+
+def run_commands(commands):
+    """Runs each command and waits for its result, which the game only sends once the command
+    has finished. Exits non-zero if the console can't be reached or a command fails."""
+    ws = open_console(10, "can't run commands")
+    if ws is None:
+        return 1
+    ws.sock.settimeout(COMMAND_TIMEOUT)
+    try:
+        for cmd_id, cmd in enumerate(commands, 1):
+            ws.send_text(json.dumps({"id": cmd_id, "content": cmd}))
+            while True:
+                raw = ws.recv()
+                if raw is None:
+                    # quit closes the connection rather than replying
+                    log(f"console closed after '{cmd}'")
+                    return 0 if cmd_id == len(commands) else 1
+                try:
+                    msg = json.loads(raw)
+                except ValueError:
+                    continue
+                if isinstance(msg, dict) and msg.get("type") == "CommandResult" \
+                        and msg.get("commandId", cmd_id) == cmd_id:
+                    break
+            text = format_message(raw)
+            emit(f"> {cmd}" + (f": {text}" if text else ""))
+            if text.startswith("[error]"):
+                return 1
+        return 0
+    except (OSError, ConnectionError) as exc:
+        log(f"console connection lost: {exc}")
+        return 1
+    finally:
+        ws.close()
+
+
+def main():
+    if len(sys.argv) > 2 and sys.argv[1] == "run":
+        return run_commands(sys.argv[2:])
+
+    ws = open_console(CONNECT_TIMEOUT, "console input is unavailable")
+    if ws is None:
+        return 1
+
+    try:
+        log(f"connected, type commands into the panel console ({ws.authenticated_as})")
 
         threading.Thread(target=pump_stdin, args=(ws,), daemon=True).start()
 
