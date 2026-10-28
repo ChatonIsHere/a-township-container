@@ -1,8 +1,7 @@
 name: Sync AMP template branch
 
-# AMP pulls its configuration repositories from the root of a branch, so the template files can't
-# live in amp/ where the rest of the repo keeps them. This copies them onto the amp-templates
-# branch whenever they change on main, so nobody has to remember to update two places.
+# AMP reads a configuration repository from the root of a branch, so this copies amp/'s template
+# files to the root of amp-templates whenever they change on main.
 on:
     push:
         branches: [main]
@@ -32,8 +31,7 @@ jobs:
                   git config user.email "github-actions[bot]@users.noreply.github.com"
 
                   STAGE=$(mktemp -d)
-                  # att.jpg is the repository icon manifest.json points at, and the app banner the
-                  # template links to, so it has to sit at the branch root alongside the templates
+                  # att.jpg is the repository icon and the template's banner
                   cp amp/atownshiptale.kvp amp/atownshiptaleconfig.json \
                      amp/atownshiptalemetaconfig.json amp/manifest.json amp/att.jpg "$STAGE/"
 

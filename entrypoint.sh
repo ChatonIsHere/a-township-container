@@ -1,9 +1,27 @@
 #!/bin/bash
 set -e
 
+# a stop before the game is running just ends the script (as PID 1, bash would ignore it)
+trap 'exit 0' TERM INT
+
+# Root is only used to hand the files to an unprivileged user, then this script reruns as them.
+# That's whoever owns game-source (so the files stay editable on the host), or PUID/PGID.
+if [ "$(id -u)" = 0 ]; then
+    owner=$(stat -c %u:%g /game-files)
+    # Docker creates a missing bind-mount folder as root
+    case "$owner" in 0:*) owner=1000:1000 ;; esac
+    PUID="${PUID:-${owner%:*}}"
+    PGID="${PGID:-${owner#*:}}"
+    if [ "$PUID" != 0 ]; then
+        # anything an older, root-run image wrote, plus the prefix if PUID isn't 1000
+        find /game-files /root "$XDG_RUNTIME_DIR" \( ! -user "$PUID" -o ! -group "$PGID" \) \
+            -exec chown -h "$PUID:$PGID" {} +
+        exec setpriv --reuid="$PUID" --regid="$PGID" --clear-groups --no-new-privs "$0" "$@"
+    fi
+fi
+
 . /tavern-settings.sh
 
-# server-data is mounted into the wine prefix separately
 if [ ! -f "/game-files/A Township Tale.exe" ]; then
     echo "A Township Tale.exe is missing from /game-files"
     exit 1
@@ -24,8 +42,8 @@ else
     echo "AUTO_PATCH=false - skipping patch checks"
 fi
 
-# TavernLib generates its JSON configs in here on first launch, but doesn't create the folder itself
-TAVERN_CONFIG_DIR="/root/.wine/drive_c/users/root/AppData/Roaming/TheModdingTavern"
+# TavernLib writes its configs here on first launch, but doesn't create the folder itself
+TAVERN_CONFIG_DIR="$WINEPREFIX/drive_c/users/$USER/AppData/Roaming/TheModdingTavern"
 mkdir -p "$TAVERN_CONFIG_DIR"
 
 TAVERN_SERVER_JSON="$TAVERN_CONFIG_DIR/tavern_server.json"
@@ -49,10 +67,10 @@ done
 # i don't have a mouse in terminal
 wine reg add "HKEY_CURRENT_USER\Software\Wine\WineDbg" /v ShowCrashDialog /t REG_DWORD /d 0 /f
 
-# MelonLoader writes its logs here, so now that goes to docker logs
+# MelonLoader's log goes to docker logs
 mkdir -p MelonLoader
 touch MelonLoader/Latest.log
-tail -F MelonLoader/Latest.log &
+tail -n 0 -F MelonLoader/Latest.log &
 
 GAME_ARGS=(
     -batchmode
@@ -72,5 +90,15 @@ apply_scene_env "$SERVER_SETTINGS_JSON"
 SCENE_ARG=$(scene_arg "$SERVER_SETTINGS_JSON")
 [ -n "$SCENE_ARG" ] && GAME_ARGS+=("$SCENE_ARG")
 
-# exec replaces the shell with wine so it receives docker stop's signal directly instead of it being swallowed by bash
-exec wine "A Township Tale.exe" "${GAME_ARGS[@]}"
+# stop_game saves through TavernLib's console before closing the game
+export TAVERN_CONSOLE_TOKEN_FILE="$TAVERN_CONFIG_DIR/console_token.txt"
+shutdown() {
+    trap - TERM INT
+    echo "Stop requested, saving and closing the server"
+    stop_game
+    exit 0
+}
+trap shutdown TERM INT
+
+wine "A Township Tale.exe" "${GAME_ARGS[@]}" &
+wait $!
