@@ -15,7 +15,7 @@ services:
         container_name: a-township-container
         restart: unless-stopped
         # time to save the world when stopping
-        stop_grace_period: 2m
+        stop_grace_period: 5m
         # cpus: 2
         # mem_limit: 4g
         volumes:
@@ -69,7 +69,7 @@ Set these in a `.env` file next to the compose file.
 | `PUID`, `PGID` | User and group the server runs as. Add them to `environment` to use them |
 | `ATT_ACCESS_TOKEN`, `ATT_REFRESH_TOKEN`, `ATT_IDENTITY_TOKEN` | Default to the offline server tokens |
 
-Stopping the container saves the world first: it saves and quits through the game's console, and `stop_grace_period` gives it up to 2 minutes. If the console can't be reached, the server is stopped without saving.
+Stopping the container saves the world first: it saves and quits through the game's console, and `stop_grace_period` gives it up to 5 minutes. Saves usually take seconds, but can take minutes while a new world is still generating its forest. If the console can't be reached, the server is stopped without saving.
 
 ## Updating
 

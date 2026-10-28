@@ -23,8 +23,10 @@ PORT = int(os.environ.get("RCON_PORT", "1760"))
 TOKEN_FILE = os.environ.get("TAVERN_CONSOLE_TOKEN_FILE", "")
 # the game takes minutes to boot, and the console port only opens near the end of that
 CONNECT_TIMEOUT = int(os.environ.get("TAVERN_CONSOLE_TIMEOUT", "900"))
-# for run mode; a save on a big world takes a while
-COMMAND_TIMEOUT = int(os.environ.get("TAVERN_CONSOLE_COMMAND_TIMEOUT", "120"))
+# for run mode, which stops the server: a busy server takes a while to log in, and a save can take
+# minutes while a new world is still generating its forest
+RUN_CONNECT_TIMEOUT = 30
+COMMAND_TIMEOUT = int(os.environ.get("TAVERN_CONSOLE_COMMAND_TIMEOUT", "190"))
 
 OP_TEXT, OP_BINARY, OP_CLOSE, OP_PING, OP_PONG = 0x1, 0x2, 0x8, 0x9, 0xA
 
@@ -298,10 +300,14 @@ def open_console(timeout, why):
         log(f"no console token appeared at {TOKEN_FILE}, {why}")
         return None
 
+    # a busy server is slow to answer, so each step gets what's left of the timeout (up to 30 s)
+    def remaining():
+        return max(1, min(30, deadline - time.time()))
+
     ws = None
     while time.time() < deadline and ws is None:
         try:
-            ws = WebSocket.connect(HOST, PORT)
+            ws = WebSocket.connect(HOST, PORT, timeout=remaining())
         except (OSError, ConnectionError):
             time.sleep(min(3, max(0, deadline - time.time())))
     if ws is None:
@@ -309,6 +315,7 @@ def open_console(timeout, why):
         return None
 
     try:
+        ws.sock.settimeout(remaining())
         ws.send_text(token)
         reply = ws.recv()
     except (OSError, ConnectionError) as exc:
@@ -326,7 +333,7 @@ def open_console(timeout, why):
 def run_commands(commands):
     """Runs each command and waits for its result, which the game only sends once the command
     has finished. Exits non-zero if the console can't be reached or a command fails."""
-    ws = open_console(10, "can't run commands")
+    ws = open_console(RUN_CONNECT_TIMEOUT, "can't run commands")
     if ws is None:
         return 1
     ws.sock.settimeout(COMMAND_TIMEOUT)

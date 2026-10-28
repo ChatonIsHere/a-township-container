@@ -46,7 +46,8 @@ apply_scene_env() {
 
 # Wine starts the game through start.exe, so a stop signal never reaches the game, and signalling
 # the game itself kills it without saving. Save and quit through the console instead (quit runs
-# the game's own shutdown, which saves again). Only kill it if that doesn't work.
+# the game's own shutdown, which saves again). Only kill it if that doesn't work. The worst case
+# (30 s to log in, 190 s for the save, 60 s to quit) fits in the 5 minutes the compose files and AMP allow.
 stop_game() {
     if python3 /console-bridge.py run "save now"; then
         python3 /console-bridge.py run quit >/dev/null 2>&1 || true
