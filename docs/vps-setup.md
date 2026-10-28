@@ -206,7 +206,7 @@ services:
         restart: unless-stopped
         # time to save the world when stopping
         stop_grace_period: 5m
-        # cpus: 2
+        # cpus: 4
         # mem_limit: 4g
         volumes:
             - ./game-source:/game-files
@@ -231,7 +231,7 @@ volumes:
     wine-prefix:
 ```
 
-To cap the server's CPU and RAM, uncomment `cpus` and `mem_limit` and set them to what you want. Then save and exit.
+To cap the server's CPU and RAM, uncomment `cpus` and `mem_limit` and set them to what you want. Keep at least 4 CPUs: with fewer, a new world generates more slowly, and saving it while it does can outlast the 5 minutes a stop allows. Then save and exit.
 
 ## Uploading the game files
 

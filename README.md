@@ -16,7 +16,7 @@ services:
         restart: unless-stopped
         # time to save the world when stopping
         stop_grace_period: 5m
-        # cpus: 2
+        # cpus: 4
         # mem_limit: 4g
         volumes:
             - ./game-source:/game-files
