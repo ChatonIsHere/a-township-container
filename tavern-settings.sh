@@ -46,12 +46,20 @@ apply_scene_env() {
 
 # Wine starts the game through start.exe, so a stop signal never reaches the game, and signalling
 # the game itself kills it without saving. Save and quit through the console instead (quit runs
-# the game's own shutdown, which saves again). Only kill it if that doesn't work. The worst case
-# (30 s to log in, 190 s for the save, 60 s to quit) fits in the 5 minutes the compose files and AMP allow.
+# the game's own shutdown, which saves again). Only kill it if that doesn't work.
+# While a new world generates, the game can take minutes to start a save and as long to quit, so
+# rather than a fixed share each step gets what's left of STOP_SECONDS, which leaves the kill time
+# to finish inside the 5 minutes the compose files and AMP allow.
+stop_left() {
+    local left=$(( STOP_DEADLINE - $(date +%s) ))
+    echo $(( left > 1 ? left : 1 ))
+}
+
 stop_game() {
-    if python3 /console-bridge.py run "save now"; then
-        python3 /console-bridge.py run quit >/dev/null 2>&1 || true
-        for _ in $(seq 1 60); do
+    STOP_DEADLINE=$(( $(date +%s) + ${STOP_SECONDS:-285} ))
+    if TAVERN_CONSOLE_COMMAND_TIMEOUT=$(stop_left) python3 /console-bridge.py run "save now"; then
+        TAVERN_CONSOLE_COMMAND_TIMEOUT=$(stop_left) python3 /console-bridge.py run quit >/dev/null 2>&1 || true
+        while [ "$(date +%s)" -lt "$STOP_DEADLINE" ]; do
             pgrep -f "A Township Tale.exe" >/dev/null || return 0
             sleep 1
         done
