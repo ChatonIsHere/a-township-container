@@ -201,10 +201,23 @@
         "DisplayName": "Quest scene",
         "Category": "A Township Tale:stadia_controller",
         "Subcategory": "Access:lock:3",
-        "Description": "Run the Quest-compatible scene rather than the standard one.",
+        "Description": "Run the Quest-compatible scene rather than the standard one. Takes effect on the next restart.",
         "Keywords": "quest,vr",
         "FieldName": "quest_scene",
         "ParamFieldName": "$.quest_scene",
+        "InputType": "checkbox",
+        "IncludeInCommandLine": false,
+        "DefaultValue": "false",
+        "EnumValues": {}
+    },
+    {
+        "DisplayName": "Tutorial scene",
+        "Category": "A Township Tale:stadia_controller",
+        "Subcategory": "Access:lock:3",
+        "Description": "Run the tutorial scene. Overrides Quest scene when both are on. Needs TavernLib 1.5.3 or newer, and takes effect on the next restart.",
+        "Keywords": "tutorial,scene",
+        "FieldName": "tutorial_scene",
+        "ParamFieldName": "$.tutorial_scene",
         "InputType": "checkbox",
         "IncludeInCommandLine": false,
         "DefaultValue": "false",
@@ -914,6 +927,20 @@
         "InputType": "checkbox",
         "IncludeInCommandLine": false,
         "DefaultValue": "false",
+        "EnumValues": {}
+    },
+    {
+        "DisplayName": "Garbage collection interval",
+        "Category": "A Township Tale:stadia_controller",
+        "Subcategory": "Performance:speed:10",
+        "Description": "The interval of the game's garbage collection timer. 30 is the game's own value. Needs TavernLib 1.5.2 or newer, and takes effect on the next restart.",
+        "Keywords": "garbage,gc,memory",
+        "FieldName": "garbage_collection_timer",
+        "ParamFieldName": "$.garbage_collection_timer",
+        "InputType": "number",
+        "IncludeInCommandLine": false,
+        "DefaultValue": "30",
+        "MinValue": "1",
         "EnumValues": {}
     }
 ]
