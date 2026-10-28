@@ -37,13 +37,8 @@ App.LinuxCommandLineArgs=
 App.WindowsCommandLineArgs=
 App.CommandLineArgs=
 App.UseLinuxIOREDIR=False
-# wine launches the game through start.exe and the game reparents out of this script's process
-# tree entirely (the same reason att-launch.sh has to stop it by name), so neither the direct
-# child nor the child tree ever contains it - AMP reads ~0 CPU/memory either way. Find the game
-# by matching its command line instead, the way the stock wine/proton templates do. The pattern
-# is anchored on the wine drive path because the start.exe stub keeps the exe name in its own
-# command line ("start.exe /exec A Township Tale.exe ...") and launches first - a bare-name
-# match latches onto that idle stub and still reads zero
+# the game isn't in this script's process tree (wine starts it via start.exe), so AMP finds it by
+# command line. Anchored on Z:\ because start.exe's own command line also has the exe name
 App.MonitorDirectChildOnly=False
 App.DumpFullChildProcessTree=False
 App.MonitorChildProcessName=^Z:\\.*A Township Tale\.exe.*$
@@ -53,14 +48,14 @@ App.EnvironmentVariables={"SERVER_PORT":"{{$ServerPort}}","AUTO_PATCH":"{{AutoPa
 App.CommandLineParameterFormat={0} "{1}"
 App.CommandLineParameterDelimiter=
 App.ExitMethod=OS_CLOSE
-App.ExitTimeout=60
+App.ExitTimeout=300
 App.ExitString=
 App.ExitFile=
 App.HasWriteableConsole=True
 App.HasReadableConsole=True
 App.SupportsLiveSettingsChanges=False
 App.ApplicationIPBinding=0.0.0.0
-App.Ports=[{"Protocol":"Both","Port":1757,"Ref":"ServerPort","Name":"Game Port"},{"Protocol":"Both","Port":1760,"Ref":"RconPort","Name":"RCON Port"},{"Protocol":"Both","Port":1761,"Ref":"ForestPort","Name":"Forest Port"},{"Protocol":"Both","Port":1762,"Ref":"AuthPort","Name":"Authentication Port"}]
+App.Ports=[{"Protocol":"UDP","Port":1757,"Ref":"ServerPort","Name":"Game Port"},{"Protocol":"TCP","Port":1760,"Ref":"RconPort","Name":"Console Port"},{"Protocol":"TCP","Port":1761,"Ref":"ForestPort","Name":"Web Server Port"},{"Protocol":"TCP","Port":1762,"Ref":"AuthPort","Name":"Login Port"}]
 App.AdminPortRef=0
 App.UniversalSleepApplicationUDPPortRef=ServerPort
 App.MaxUsers=8
