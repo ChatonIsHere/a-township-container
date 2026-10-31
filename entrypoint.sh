@@ -89,6 +89,9 @@ SERVER_SETTINGS_JSON="$TAVERN_CONFIG_DIR/server_settings.json"
 apply_scene_env "$SERVER_SETTINGS_JSON"
 SCENE_ARG=$(scene_arg "$SERVER_SETTINGS_JSON")
 [ -n "$SCENE_ARG" ] && GAME_ARGS+=("$SCENE_ARG")
+apply_modlist_env "$TAVERN_CONFIG_DIR"
+read -ra MODLIST_ARGS <<< "$(modlist_arg "$TAVERN_CONFIG_DIR")"
+GAME_ARGS+=("${MODLIST_ARGS[@]}")
 
 # stop_game saves through TavernLib's console before closing the game
 export TAVERN_CONSOLE_TOKEN_FILE="$TAVERN_CONFIG_DIR/console_token.txt"

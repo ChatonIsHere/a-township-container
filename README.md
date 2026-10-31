@@ -33,6 +33,7 @@ services:
             AUTO_PATCH: ${AUTO_PATCH:-true}
             DEBUG: ${DEBUG:-false}
             SCENE: ${SCENE:-}
+            MODLIST: ${MODLIST:-}
             ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
             ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
             ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}
@@ -65,6 +66,7 @@ Set these in a `.env` file next to the compose file.
 | `SERVER_PORT` | Game port, default `1757` |
 | `AUTO_PATCH` | `false` skips patching and update checks |
 | `SCENE` | `normal`, `quest` or `tutorial` (`tutorial` needs TavernLib 1.5.3 or newer). Written to `server_settings.json` and passed to the server on every start. Unset keeps what `server_settings.json` says |
+| `MODLIST` | Mods to keep installed, comma-separated, as `Author.Mod` (its latest) or `Author.Mod@1.2.0`. Written to `tavern-config/modlist.json`; every start installs and updates what it lists and disables other installed mods. Unset keeps the file, so a modlist exported from TavernLauncher's Mod Manager can go there instead. Needs a TavernLib with the mod manager, which isn't released yet |
 | `DEBUG` | `true` launches with `/debug_helper` |
 | `PUID`, `PGID` | User and group the server runs as. Add them to `environment` to use them |
 | `ATT_ACCESS_TOKEN`, `ATT_REFRESH_TOKEN`, `ATT_IDENTITY_TOKEN` | Default to the offline server tokens |

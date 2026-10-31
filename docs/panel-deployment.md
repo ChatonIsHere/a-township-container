@@ -59,6 +59,7 @@ The first start copies the wine prefix into place and downloads MelonLoader, Tav
 - `tavern_server.json`'s `server_port` follows the primary allocation
 - `Auto patch` set to `false` skips patching. To force a full re-patch, delete `.att-patch-meta.json` and restart
 - `Scene` picks the scene: `normal`, `quest` or `tutorial` (needs TavernLib 1.5.3 or newer). Empty keeps whatever `server_settings.json` says
+- To keep mods installed, put a `modlist.json` exported from TavernLauncher's Mod Manager in `tavern-config`. Every start installs and updates what it lists and disables other installed mods. Needs a TavernLib with the mod manager, which isn't released yet
 
 ## CubeCoders AMP
 
@@ -90,7 +91,7 @@ The rest of the `A Township Tale` settings edit the server's own config files. `
 
 You can type commands into AMP's console. They go to TavernLib's websocket console, and replies show up alongside the log once the server has started. If it can't connect it prints one line and the server carries on.
 
-The instance directory has the same layout as the egg's: `game-source`, `.wine`, `server-data` and `tavern-config`. Back up the last two. Older versions kept them inside `.wine`; the first start on the current version moves them out.
+The instance directory has the same layout as the egg's: `game-source`, `.wine`, `server-data` and `tavern-config`. Back up the last two. Older versions kept them inside `.wine`; the first start on the current version moves them out. A `modlist.json` in `tavern-config` works as it does for the egg.
 
 ## Building the panel images
 

@@ -44,6 +44,21 @@ apply_scene_env() {
     rm -f "$tmp"
 }
 
+# MODLIST="Author.Mod,Author.Other@1.2.0" writes TavernLib's modlist.json into the config folder.
+# Empty or unset leaves the file alone, so one exported from TavernLauncher's Mod Manager can be put
+# there instead. While the file exists, every start reconciles Mods/ against it (modlist_arg).
+apply_modlist_env() {
+    [ -n "${MODLIST:-}" ] || return 0
+    jq -n --arg m "$MODLIST" '{schema: 1, mods: [$m | split(",")[] | gsub("^ +| +$"; "") | select(length > 0)]}' \
+        > "$1/modlist.json.tmp" && mv "$1/modlist.json.tmp" "$1/modlist.json"
+}
+
+# TavernLib reads /modlist relative to its config folder.
+modlist_arg() {
+    [ -s "$1/modlist.json" ] && echo "/modlist modlist.json"
+    return 0
+}
+
 # Wine starts the game through start.exe, so a stop signal never reaches the game, and signalling
 # the game itself kills it without saving. Save and quit through the console instead (quit runs
 # the game's own shutdown, which saves again). Only kill it if that doesn't work.

@@ -146,6 +146,8 @@ GAME_ARGS=(
 [ "${DEBUG:-false}" = "true" ] && GAME_ARGS+=(/debug_helper)
 SCENE_ARG=$(scene_arg "$SERVER_SETTINGS_JSON")
 [ -n "$SCENE_ARG" ] && GAME_ARGS+=("$SCENE_ARG")
+read -ra MODLIST_ARGS <<< "$(modlist_arg "$TAVERN_CONFIG_DIR")"
+GAME_ARGS+=("${MODLIST_ARGS[@]}")
 
 shutdown() {
     trap - TERM INT
