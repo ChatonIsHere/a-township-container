@@ -22,6 +22,7 @@ services:
             AUTO_PATCH: ${AUTO_PATCH:-true}
             DEBUG: ${DEBUG:-false}
             SCENE: ${SCENE:-}
+            MODLIST: ${MODLIST:-}
             ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
             ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
             ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}
