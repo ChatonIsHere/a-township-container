@@ -233,6 +233,8 @@ volumes:
 
 To cap the server's CPU and RAM, uncomment `cpus` and `mem_limit` and set them to what you want. Keep at least 4 CPUs: with fewer, a new world generates more slowly, and saving it while it does can outlast the 5 minutes a stop allows. Then save and exit.
 
+If the machine runs several servers, you can pin each one to its own CPUs with `cpuset` (for example `cpuset: "3-5,15-17"`) instead of capping it with `cpus`. A pinned server can't use more than those CPUs anyway, keeps their caches to itself, and is never paused partway through a frame for reaching a `cpus` limit. Pick CPUs that share a cache: `lscpu -e` lists each CPU's core and its L3 cache (the last number under `L1d:L1i:L2:L3`), so take whole cores with the same L3, including each core's second thread. Give every server its own set; servers that share CPUs slow each other down. If you run the Steady mod, set its `JobWorkers` to the number of pinned CPUs minus one. This hasn't been measured yet, so check that the server runs at least as smoothly as before.
+
 ## Uploading the game files
 
 Uploading ~4.4GB as thousands of files over SFTP is painfully slow, so zip it first. On your PC, open the `game-source` folder, select everything inside it (`Ctrl+A`), right-click and pick `Compress to ZIP file` (or use 7-Zip). Zip the contents, not the folder, so the files sit at the top of the zip.
