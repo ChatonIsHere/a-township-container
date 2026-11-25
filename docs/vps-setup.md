@@ -156,7 +156,7 @@ sudo ufw status verbose
 
 You should see `Status: active`, the SSH rule (once for IPv4 and once with `(v6)`), and `Default: deny (incoming), allow (outgoing)`.
 
-Many providers also have a firewall in their control panel. If yours is turned on, open the game ports there too: `1757` UDP, and `1760` to `1762` TCP.
+Many providers also have a firewall in their control panel. If yours is turned on, open the game ports there too: `1757` UDP, and `1761` and `1762` TCP. Leave `1760` (the console) closed.
 
 ## Installing Docker
 
@@ -215,14 +215,20 @@ services:
             - wine-prefix:/root/.wine
         ports:
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp' # game
-            - '1760:1760/tcp' # console, for TavernLauncher's Remote Console
-            - '1761:1761/tcp' # the game's web server
-            - '1762:1762/tcp' # TavernLib's login
+            - '127.0.0.1:${RCON_PORT:-1760}:${RCON_PORT:-1760}/tcp' # console, this machine only (see the README)
+            - '${WEB_PORT:-1761}:${WEB_PORT:-1761}/tcp' # the game's web server
+            - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp' # TavernLib's login
         environment:
             SERVER_PORT: ${SERVER_PORT:-1757}
+            RCON_PORT: ${RCON_PORT:-1760}
+            WEB_PORT: ${WEB_PORT:-1761}
+            AUTH_PORT: ${AUTH_PORT:-1762}
             AUTO_PATCH: ${AUTO_PATCH:-true}
             DEBUG: ${DEBUG:-false}
             SCENE: ${SCENE:-}
+            MODLIST: ${MODLIST:-}
+            PUID: ${PUID:-}
+            PGID: ${PGID:-}
             ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
             ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
             ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}
@@ -325,12 +331,12 @@ The game isn't directly inside `game-source`. `ls ~/att-server/game-source` shou
 
 **Nobody can connect.**
 
-1. **The host's firewall.** This is the big one. Hetzner Cloud Firewalls, AWS security groups, Oracle Cloud (which blocks nearly everything by default), Azure NSGs and so on sit in front of the VPS, and neither UFW nor Docker sees what they drop. Open `1757` UDP and `1760` to `1762` TCP there, or check no such firewall is attached
+1. **The host's firewall.** This is the big one. Hetzner Cloud Firewalls, AWS security groups, Oracle Cloud (which blocks nearly everything by default), Azure NSGs and so on sit in front of the VPS, and neither UFW nor Docker sees what they drop. Open `1757` UDP and `1761` and `1762` TCP there, or check no such firewall is attached
 2. **Is it running?** `docker compose ps` should say `Up` (not `Restarting`), and `sudo ss -ulpn | grep 1757` should show a listener
 3. **A changed port.** If you set `SERVER_PORT` in `.env`, open that port instead of `1757`
 
 **`ufw status` doesn't mention the game ports.**
-That's expected. Docker writes its own firewall rules for published ports, bypassing UFW. Only publish ports you want public (this compose file only publishes the game's).
+That's expected. Docker writes its own firewall rules for published ports, bypassing UFW. Only publish ports you want public. This compose file publishes the game, web server and login ports, and keeps the console on `127.0.0.1`.
 
 **The server dies after running a while and the logs just stop.**
 On a 4GB server this is usually Linux running out of memory. Fresh cloud images have no swap, so add 2GB:

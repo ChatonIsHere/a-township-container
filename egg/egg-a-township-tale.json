@@ -7,7 +7,7 @@
     "exported_at": "2026-08-12T00:00:00+00:00",
     "name": "A Township Tale",
     "author": "22032380+ChatonIsHere@users.noreply.github.com",
-    "description": "A Township Tale server using The Modding Tavern's server implementation. The game files cannot be distributed with this egg - upload the contents of your prepared game-source folder (A Township Tale.exe and the A Township Tale_Data folder at the top level) into the server's game-source directory before first start. Alongside the primary allocation (the game port, UDP, default 1757), the server needs allocations on TCP ports 1760 (console), 1761 (web server) and 1762 (login). Those three are fixed and can't be moved.",
+    "description": "A Township Tale server using The Modding Tavern's server implementation. The game files cannot be distributed with this egg - upload the contents of your prepared game-source folder (A Township Tale.exe and the A Township Tale_Data folder at the top level) into the server's game-source directory before first start. Alongside the primary allocation (the game port, UDP, default 1757), the server needs three TCP allocations: console (default 1760), web server (1761) and login (1762). Set the port variables to match them.",
     "features": [],
     "docker_images": {
         "A Township Tale": "ghcr.io/chatonishere/a-township-container:latest-egg"
@@ -56,6 +56,16 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "nullable|string|in:normal,quest,tutorial",
+            "field_type": "text"
+        },
+        {
+            "name": "Mod list",
+            "description": "Mods to keep installed, comma-separated, as Author.Mod (its latest) or Author.Mod@1.2.0. Every start installs and updates them and disables other installed mods. Leave empty to keep tavern-config/modlist.json as it is.",
+            "env_variable": "MODLIST",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
             "field_type": "text"
         },
         {

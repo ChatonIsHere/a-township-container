@@ -32,6 +32,19 @@
         }
     },
     {
+        "DisplayName": "Mod list",
+        "Category": "A Township Tale:stadia_controller",
+        "Subcategory": "Container:build:1",
+        "Description": "Mods to keep installed, comma-separated, as Author.Mod (its latest) or Author.Mod@1.2.0. Every start installs and updates them and disables other installed mods. Leave empty to keep tavern-config/modlist.json as it is.",
+        "Keywords": "mods,modlist",
+        "FieldName": "Modlist",
+        "InputType": "text",
+        "ParamFieldName": "Modlist",
+        "IncludeInCommandLine": false,
+        "DefaultValue": "",
+        "EnumValues": {}
+    },
+    {
         "DisplayName": "ATT access token",
         "Category": "A Township Tale:stadia_controller",
         "Subcategory": "Container:build:1",

@@ -144,6 +144,7 @@ GAME_ARGS=(
 [ "${DEBUG:-false}" = "true" ] && GAME_ARGS+=(/debug_helper)
 SCENE_ARG=$(scene_arg "$SERVER_SETTINGS_JSON")
 [ -n "$SCENE_ARG" ] && GAME_ARGS+=("$SCENE_ARG")
+apply_modlist_env "$TAVERN_CONFIG_DIR"
 read -ra MODLIST_ARGS <<< "$(modlist_arg "$TAVERN_CONFIG_DIR")"
 GAME_ARGS+=("${MODLIST_ARGS[@]}")
 

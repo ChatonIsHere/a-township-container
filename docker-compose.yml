@@ -14,7 +14,7 @@ services:
             - wine-prefix:/root/.wine
         ports:
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp' # game
-            - '${RCON_PORT:-1760}:${RCON_PORT:-1760}/tcp' # console, for TavernLauncher's Remote Console
+            - '127.0.0.1:${RCON_PORT:-1760}:${RCON_PORT:-1760}/tcp' # console, this machine only (see the README)
             - '${WEB_PORT:-1761}:${WEB_PORT:-1761}/tcp' # the game's web server
             - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp' # TavernLib's login
         environment:
@@ -26,6 +26,8 @@ services:
             DEBUG: ${DEBUG:-false}
             SCENE: ${SCENE:-}
             MODLIST: ${MODLIST:-}
+            PUID: ${PUID:-}
+            PGID: ${PGID:-}
             ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
             ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
             ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}

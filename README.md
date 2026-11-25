@@ -25,7 +25,7 @@ services:
             - wine-prefix:/root/.wine
         ports:
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp' # game
-            - '${RCON_PORT:-1760}:${RCON_PORT:-1760}/tcp' # console, for TavernLauncher's Remote Console
+            - '127.0.0.1:${RCON_PORT:-1760}:${RCON_PORT:-1760}/tcp' # console, this machine only (see the README)
             - '${WEB_PORT:-1761}:${WEB_PORT:-1761}/tcp' # the game's web server
             - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp' # TavernLib's login
         environment:
@@ -37,6 +37,8 @@ services:
             DEBUG: ${DEBUG:-false}
             SCENE: ${SCENE:-}
             MODLIST: ${MODLIST:-}
+            PUID: ${PUID:-}
+            PGID: ${PGID:-}
             ATT_ACCESS_TOKEN: ${ATT_ACCESS_TOKEN:-}
             ATT_REFRESH_TOKEN: ${ATT_REFRESH_TOKEN:-}
             ATT_IDENTITY_TOKEN: ${ATT_IDENTITY_TOKEN:-}
@@ -72,8 +74,10 @@ Set these in a `.env` file next to the compose file.
 | `SCENE` | `normal`, `quest` or `tutorial` (`tutorial` needs TavernLib 1.5.3 or newer). Written to `server_settings.json` and passed to the server on every start. Unset keeps what `server_settings.json` says |
 | `MODLIST` | Mods to keep installed, comma-separated, as `Author.Mod` (its latest) or `Author.Mod@1.2.0`. Written to `tavern-config/modlist.json`; every start installs and updates what it lists and disables other installed mods. Unset keeps the file, so a modlist exported from TavernLauncher's Mod Manager can go there instead. Needs a TavernLib with the mod manager, which isn't released yet |
 | `DEBUG` | `true` launches with `/debug_helper` |
-| `PUID`, `PGID` | User and group the server runs as. Add them to `environment` to use them |
+| `PUID`, `PGID` | User and group the server runs as. Unset means whoever owns `game-source` |
 | `ATT_ACCESS_TOKEN`, `ATT_REFRESH_TOKEN`, `ATT_IDENTITY_TOKEN` | Default to the offline server tokens |
+
+The console is published on `127.0.0.1` only, since it gives full control of the server. To use TavernLauncher's Remote Console or TavernKeeper from your PC, open an SSH tunnel with `ssh -L 1760:127.0.0.1:1760 you@your-server` and connect them to `127.0.0.1`. To open it to the internet anyway, take `127.0.0.1:` off its line in the compose file and keep your console token secret.
 
 Stopping the container saves the world first: it saves and quits through the game's console, and `stop_grace_period` gives it up to 5 minutes. Saves usually take seconds, but can take minutes while a new world is still generating its forest. If the console can't be reached, the server is stopped without saving.
 
