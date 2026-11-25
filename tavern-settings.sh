@@ -1,5 +1,19 @@
 # Shared by entrypoint.sh, egg/entrypoint.sh and amp/att-launch.sh.
 
+# The four ports into tavern_server.json, which TavernLib and TavernLauncher read: SERVER_PORT (game,
+# UDP), RCON_PORT (console), WEB_PORT (the game's web server) and AUTH_PORT (TavernLib's login). A
+# TavernLib from before SRV support only follows the game port. RCON_PORT is exported for the bridge.
+write_ports() {
+    local file="$1" tmp
+    [ -f "$file" ] || echo '{}' > "$file"
+    tmp=$(mktemp)
+    jq --argjson game "${SERVER_PORT:-1757}" --argjson console "${RCON_PORT:-1760}" \
+       --argjson web "${WEB_PORT:-1761}" --argjson auth "${AUTH_PORT:-1762}" \
+       '.server_port = $game | .console_port = $console | .web_port = $web | .auth_port = $auth' \
+       "$file" > "$tmp" && mv "$tmp" "$file"
+    export RCON_PORT="${RCON_PORT:-1760}"
+}
+
 # Panel file managers unzip uploads without Unix permissions, and wine won't start an exe that
 # isn't executable. Never fatal: a file we can't chmod keeps the bits it has.
 ensure_exe_runnable() {

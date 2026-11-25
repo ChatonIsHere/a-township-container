@@ -81,9 +81,7 @@ link_into_prefix tavern-config TheModdingTavern
 TAVERN_CONFIG_DIR="$INSTANCE_DIR/tavern-config"
 
 TAVERN_SERVER_JSON="$TAVERN_CONFIG_DIR/tavern_server.json"
-[ -f "$TAVERN_SERVER_JSON" ] || echo '{}' > "$TAVERN_SERVER_JSON"
-tmp=$(mktemp)
-jq --argjson port "${SERVER_PORT:-1757}" '.server_port = $port' "$TAVERN_SERVER_JSON" > "$tmp" && mv "$tmp" "$TAVERN_SERVER_JSON"
+write_ports "$TAVERN_SERVER_JSON"
 
 # TavernLib only adds new keys when it regenerates the whole file, so an older file can lack ones
 # AMP's settings page maps. Add any that are missing at TavernLib's defaults. Before the first

@@ -47,9 +47,7 @@ TAVERN_CONFIG_DIR="$WINEPREFIX/drive_c/users/$USER/AppData/Roaming/TheModdingTav
 mkdir -p "$TAVERN_CONFIG_DIR"
 
 TAVERN_SERVER_JSON="$TAVERN_CONFIG_DIR/tavern_server.json"
-[ -f "$TAVERN_SERVER_JSON" ] || echo '{}' > "$TAVERN_SERVER_JSON"
-tmp=$(mktemp)
-jq --argjson port "${SERVER_PORT:-1757}" '.server_port = $port' "$TAVERN_SERVER_JSON" > "$tmp" && mv "$tmp" "$TAVERN_SERVER_JSON"
+write_ports "$TAVERN_SERVER_JSON"
 
 export DISPLAY=:1
 

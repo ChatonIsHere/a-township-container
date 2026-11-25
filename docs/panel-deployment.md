@@ -22,12 +22,12 @@ The server needs these ports:
 
 | Port | Protocol | For |
 | --- | --- | --- |
-| 1757 (the game port, can be changed) | UDP | Players |
-| 1760 | TCP | The console, used by TavernLauncher's Remote Console |
-| 1761 | TCP | The game's web server |
-| 1762 | TCP | TavernLib's login |
+| 1757 (`SERVER_PORT`) | UDP | Players |
+| 1760 (`RCON_PORT`) | TCP | The console, used by TavernLauncher's Remote Console |
+| 1761 (`WEB_PORT`) | TCP | The game's web server |
+| 1762 (`AUTH_PORT`) | TCP | TavernLib's login |
 
-Only the game port can be changed. The others are fixed in the game and TavernLib.
+All four can be changed. Players need only the server's name or IP: the launcher finds the rest from the login port, which an SRV record can give it (see [srv-records.md](srv-records.md)). A TavernLib from before SRV support only follows the game port.
 
 ## Pterodactyl, Pelican and Calagopus
 
@@ -39,7 +39,7 @@ Only the game port can be changed. The others are fixed in the game and TavernLi
 
 ### Creating the server
 
-- **Allocations.** The primary allocation is the game port (`1757` by default). Add `1760`, `1761` and `1762` as well
+- **Allocations.** The primary allocation is the game port (`1757` by default). Add three more for the console, web server and login, and set `Console port`, `Web server port` and `Login port` to them (`1760`, `1761` and `1762` by default)
 - **Resources.** 2 CPU cores and 4GB of RAM is a good start. For disk, allow the game (~4.4GB) plus a couple of GB
 
 The install script doesn't download anything (there's nothing it legally can). It just reminds you what to upload.
@@ -56,7 +56,7 @@ The first start copies the wine prefix into place and downloads MelonLoader, Tav
 
 - The server directory holds `game-source`, `.wine` (the prefix), `server-data` (world saves) and `tavern-config` (TavernLib's `server_settings.json` and `users.json`). Back up the last two
 - On older versions of this image the saves and config lived inside `.wine`. The first start on the current version moves them out
-- `tavern_server.json`'s `server_port` follows the primary allocation
+- `tavern_server.json`'s `server_port` follows the primary allocation, and its `console_port`, `web_port` and `auth_port` follow the three port variables
 - `Auto patch` set to `false` skips patching. To force a full re-patch, delete `.att-patch-meta.json` and restart
 - `Scene` picks the scene: `normal`, `quest` or `tutorial` (needs TavernLib 1.5.3 or newer). Empty keeps whatever `server_settings.json` says
 - To keep mods installed, put a `modlist.json` exported from TavernLauncher's Mod Manager in `tavern-config`. Every start installs and updates what it lists and disables other installed mods. Needs a TavernLib with the mod manager, which isn't released yet

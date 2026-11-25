@@ -25,11 +25,14 @@ services:
             - wine-prefix:/root/.wine
         ports:
             - '${SERVER_PORT:-1757}:${SERVER_PORT:-1757}/udp' # game
-            - '1760:1760/tcp' # console, for TavernLauncher's Remote Console
-            - '1761:1761/tcp' # the game's web server
-            - '1762:1762/tcp' # TavernLib's login
+            - '${RCON_PORT:-1760}:${RCON_PORT:-1760}/tcp' # console, for TavernLauncher's Remote Console
+            - '${WEB_PORT:-1761}:${WEB_PORT:-1761}/tcp' # the game's web server
+            - '${AUTH_PORT:-1762}:${AUTH_PORT:-1762}/tcp' # TavernLib's login
         environment:
             SERVER_PORT: ${SERVER_PORT:-1757}
+            RCON_PORT: ${RCON_PORT:-1760}
+            WEB_PORT: ${WEB_PORT:-1761}
+            AUTH_PORT: ${AUTH_PORT:-1762}
             AUTO_PATCH: ${AUTO_PATCH:-true}
             DEBUG: ${DEBUG:-false}
             SCENE: ${SCENE:-}
@@ -63,7 +66,8 @@ Set these in a `.env` file next to the compose file.
 
 | Setting | |
 | --- | --- |
-| `SERVER_PORT` | Game port, default `1757` |
+| `SERVER_PORT` | Game port (UDP), default `1757` |
+| `RCON_PORT`, `WEB_PORT`, `AUTH_PORT` | Console, web server and login ports (TCP), default `1760`, `1761` and `1762`. Change them to run two servers on one address. Players find them from the login port, which an SRV record can give them; see [docs/srv-records.md](docs/srv-records.md). Needs a TavernLib with SRV support |
 | `AUTO_PATCH` | `false` skips patching and update checks |
 | `SCENE` | `normal`, `quest` or `tutorial` (`tutorial` needs TavernLib 1.5.3 or newer). Written to `server_settings.json` and passed to the server on every start. Unset keeps what `server_settings.json` says |
 | `MODLIST` | Mods to keep installed, comma-separated, as `Author.Mod` (its latest) or `Author.Mod@1.2.0`. Written to `tavern-config/modlist.json`; every start installs and updates what it lists and disables other installed mods. Unset keeps the file, so a modlist exported from TavernLauncher's Mod Manager can go there instead. Needs a TavernLib with the mod manager, which isn't released yet |

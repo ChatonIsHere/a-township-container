@@ -87,6 +87,36 @@
             "user_editable": true,
             "rules": "required|string",
             "field_type": "text"
+        },
+        {
+            "name": "Console port",
+            "description": "TCP port for the game's console (TavernLauncher's Remote Console). Give it an allocation.",
+            "env_variable": "RCON_PORT",
+            "default_value": "1760",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|between:1,65535",
+            "field_type": "text"
+        },
+        {
+            "name": "Web server port",
+            "description": "TCP port for the game's web server, which players load the forest from. Give it an allocation.",
+            "env_variable": "WEB_PORT",
+            "default_value": "1761",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|between:1,65535",
+            "field_type": "text"
+        },
+        {
+            "name": "Login port",
+            "description": "TCP port for TavernLib's login. Players' launchers learn the other ports from it. Give it an allocation.",
+            "env_variable": "AUTH_PORT",
+            "default_value": "1762",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|between:1,65535",
+            "field_type": "text"
         }
     ]
 }
