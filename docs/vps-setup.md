@@ -31,7 +31,7 @@ An SSH key is a pair of files: a private key that stays on your PC, and a public
 
 Any provider with Ubuntu works: Hetzner, OVH, Netcup, DigitalOcean, Vultr, whoever. I use Hetzner, mostly out of habit.
 
-- At least 2 CPU cores and 4GB of RAM. I'm testing on a Hetzner CX33, but a CX23 should be enough
+- 2 CPU cores and 4GB of RAM for up to about 5 players who mostly stay around Town (a Hetzner CX23, say). If people will explore the forest and caves, or you expect 6 to 12 players, get 4 cores and 8GB (a CX33). The forest is what uses memory: twelve players around Town used about 3GB, and with half of them in the forest it doubled
 - 40GB of disk or more (the game is ~4.4GB, plus the zip while you upload it, the Docker image, Ubuntu and your saves)
 - A dedicated IPv4 address. Some hosts sell cheaper IPv6-only servers; the game needs IPv4
 - A location close to your players (distance is ping)
