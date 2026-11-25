@@ -81,11 +81,11 @@ With Controller/Target, every target that hosts an instance needs the repository
 ### Creating the instance
 
 1. Create an instance and pick `A Township Tale`
-2. Keep the default ports. Only the game port can be changed. Set a memory limit (4GB is a good start); AMP's memory gauge measures against it, and against the host's whole RAM without one
+2. Keep the default ports unless you run more than one server on the address (see [srv-records.md](srv-records.md)). Set a memory limit (4GB is a good start); AMP's memory gauge measures against it, and against the host's whole RAM without one
 3. Upload the contents of your `game-source` folder into the instance's `game-source` directory (created on the first start if missing). Zip it and unzip it there rather than uploading ~4.4GB of loose files
 4. Start it. The first start copies the wine prefix and downloads the mods and patch, so it needs internet access. AMP marks it running once TavernLib logs `Starting auth listening cycle`
 
-`Auto patch`, `Debug helper` and the three token fields are the compose setup's `AUTO_PATCH`, `DEBUG` and `ATT_*_TOKEN`. Leave the tokens empty for the offline server tokens.
+`Auto patch`, `Debug helper`, `Mod list` and the three token fields are the compose setup's `AUTO_PATCH`, `DEBUG`, `MODLIST` and `ATT_*_TOKEN`. Leave the tokens empty for the offline server tokens.
 
 The rest of the `A Township Tale` settings edit the server's own config files. `Listing` and `Access` (name, password, player limit, region, whitelist, Quest and Tutorial scene) and `Garbage collection interval` are TavernLib's `server_settings.json`; `Saving` through `Performance` are the game's `ServerConfiguration.json`. Both files are written on the first successful start, so the values show up after that. Scene and garbage collection changes apply on the next restart, and Tutorial wins if both scenes are ticked.
 
